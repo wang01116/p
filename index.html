@@ -3,49 +3,50 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SubLink Material v3</title>
+<title>SubLink Material M3</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto+Mono&display=swap');
 
 :root {
-  --md-bg: #0b0e14; --md-surf: #1a1c22; --md-prim: #a8c7fa; --md-on-prim: #062e6f;
-  --md-outline: #444746; --md-txt: #e3e3e3; --md-sec-txt: #c4c7c5;
+  --m3-bg: #111318; --m3-surf: #1a1c22; --m3-prim: #a8c7fa; --m3-on-prim: #062e6f;
+  --m3-outline: #444746; --m3-txt: #e3e3e3; --m3-sec: #c4c7c5;
 }
 [data-theme="light"] {
-  --md-bg: #f8f9ff; --md-surf: #ffffff; --md-prim: #0b57d0; --md-on-prim: #ffffff;
-  --md-outline: #c4c7c5; --md-txt: #1f1f1f; --md-sec-txt: #444746;
+  --m3-bg: #f8f9ff; --m3-surf: #ffffff; --m3-prim: #0b57d0; --m3-on-prim: #ffffff;
+  --m3-outline: #c4c7c5; --m3-txt: #1f1f1f; --m3-sec: #444746;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Google Sans', sans-serif; background: var(--md-bg); color: var(--md-txt); height: 100vh; overflow: hidden; }
+* { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.3s; }
+body { font-family: 'Google Sans', sans-serif; background: var(--m3-bg); color: var(--m3-txt); height: 100vh; overflow: hidden; }
 
-/* SETUP */
-#setup { position: fixed; inset: 0; z-index: 999; background: var(--md-bg); display: flex; align-items: center; justify-content: center; }
-.card { background: var(--md-surf); padding: 32px; border-radius: 28px; width: 90%; max-width: 400px; text-align: center; border: 1px solid var(--md-outline); }
+/* SETUP SCREEN */
+#setup { position: fixed; inset: 0; z-index: 100; background: var(--m3-bg); display: flex; align-items: center; justify-content: center; }
+.m3-card-lg { background: var(--m3-surf); padding: 40px; border-radius: 28px; width: 90%; max-width: 400px; text-align: center; border: 1px solid var(--m3-outline); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
 
-/* APP LAYOUT */
+/* MAIN APP */
 .app { display: none; grid-template-rows: 64px 1fr; height: 100vh; }
-.app.active { display: grid; }
-.navbar { display: flex; align-items: center; padding: 0 24px; gap: 16px; background: var(--md-surf); border-bottom: 1px solid var(--md-outline); }
+.app.ready { display: grid; }
+.navbar { display: flex; align-items: center; padding: 0 24px; gap: 16px; background: var(--m3-surf); border-bottom: 1px solid var(--m3-outline); }
 
-.main { display: flex; overflow: hidden; }
-.sidebar { width: 340px; background: var(--md-bg); border-right: 1px solid var(--md-outline); display: flex; flex-direction: column; transition: 0.3s; }
-.sidebar.collapsed { width: 0; transform: translateX(-340px); }
+.body-box { display: flex; overflow: hidden; }
+.sidebar { width: 340px; background: var(--m3-bg); border-right: 1px solid var(--m3-outline); display: flex; flex-direction: column; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.sidebar.hide { width: 0; transform: translateX(-340px); }
 
-.content { flex: 1; display: flex; flex-direction: column; background: #fff; position: relative; }
+.content-view { flex: 1; display: flex; flex-direction: column; background: #fff; }
 
 /* COMPONENTS */
-.m3-input { width: 100%; background: var(--md-surf); border: 1px solid var(--md-outline); border-radius: 12px; padding: 12px 16px; color: var(--md-txt); font-family: 'Roboto Mono', monospace; font-size: 14px; margin-bottom: 12px; outline: none; }
-.m3-btn { background: var(--md-prim); color: var(--md-on-prim); padding: 12px 24px; border-radius: 100px; border: none; font-weight: 700; cursor: pointer; }
-.m3-btn:hover { opacity: 0.9; }
+.m3-input { width: 100%; background: var(--m3-surf); border: 1px solid var(--m3-outline); border-radius: 12px; padding: 12px 16px; color: var(--m3-txt); font-family: 'Roboto Mono', monospace; font-size: 14px; margin-bottom: 12px; outline: none; }
+.m3-btn { background: var(--m3-prim); color: var(--m3-on-prim); padding: 12px 24px; border-radius: 100px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; }
+.m3-btn:hover { filter: brightness(1.1); }
 
-.node-item { background: var(--md-surf); padding: 16px; border-radius: 16px; border: 1px solid var(--md-outline); margin-bottom: 10px; cursor: pointer; position: relative; }
-.node-item.active { border-color: var(--md-prim); background: rgba(168, 199, 250, 0.1); }
-.node-ms { position: absolute; right: 16px; top: 16px; font-size: 10px; color: var(--md-prim); font-weight: bold; }
+.node-item { background: var(--m3-surf); border: 1px solid var(--m3-outline); padding: 16px; border-radius: 20px; margin-bottom: 12px; cursor: pointer; position: relative; }
+.node-item.active { border-color: var(--m3-prim); background: rgba(168, 199, 250, 0.1); }
+.node-ms { position: absolute; right: 16px; top: 16px; font-size: 10px; color: var(--m3-prim); font-weight: bold; }
 
-.browser-header { background: var(--md-surf); border-bottom: 1px solid var(--md-outline); padding: 12px 16px; }
-.quick-links { display: flex; gap: 8px; padding: 8px 16px; background: var(--md-bg); overflow-x: auto; border-bottom: 1px solid var(--md-outline); }
-.chip { padding: 6px 14px; background: var(--md-surf); border-radius: 8px; font-size: 12px; border: 1px solid var(--md-outline); cursor: pointer; white-space: nowrap; }
+.browser-header { background: var(--m3-surf); padding: 10px 16px; border-bottom: 1px solid var(--m3-outline); }
+.quick-bar { display: flex; gap: 8px; padding: 10px 16px; background: var(--m3-bg); border-bottom: 1px solid var(--m3-outline); overflow-x: auto; }
+.m3-chip { padding: 8px 16px; background: var(--m3-surf); border-radius: 12px; font-size: 12px; border: 1px solid var(--m3-outline); cursor: pointer; white-space: nowrap; }
+.m3-chip:hover { border-color: var(--m3-prim); }
 
 iframe { flex: 1; border: none; background: #fff; }
 </style>
@@ -53,48 +54,50 @@ iframe { flex: 1; border: none; background: #fff; }
 <body>
 
 <div id="setup">
-  <div class="card">
-    <h2 style="margin-bottom: 20px;">SubLink Pro Max</h2>
-    <input type="text" id="w-url" class="m3-input" placeholder="Worker URL (https://...)" style="text-align: center;">
-    <button class="m3-btn" style="width: 100%;" onclick="connect()">立即开启</button>
+  <div class="m3-card-lg">
+    <h1 style="margin-bottom: 10px">SubLink M3</h1>
+    <p style="color: var(--m3-sec); font-size: 14px; margin-bottom: 30px">输入您的 Cloudflare Worker 接口</p>
+    <input type="text" id="worker-url" class="m3-input" placeholder="https://your-worker.dev" style="text-align: center">
+    <button class="m3-btn" style="width: 100%" onclick="connect()">连接控制台</button>
   </div>
 </div>
 
-<div class="app" id="app">
+<div class="app" id="main-app">
   <nav class="navbar">
-    <button onclick="document.getElementById('sidebar').classList.toggle('collapsed')" style="background:none; border:none; color:var(--md-txt); font-size:24px; cursor:pointer">☰</button>
-    <div style="font-size: 20px; font-weight: 500; flex: 1;">SubLink</div>
-    <button class="m3-btn" style="padding: 8px 16px;" onclick="testAll()">全测速</button>
-    <button onclick="document.body.setAttribute('data-theme', document.body.getAttribute('data-theme')==='light'?'dark':'light')" style="background:none; border:none; color:var(--md-txt); font-size:20px; cursor:pointer">🌓</button>
+    <button onclick="toggleSidebar()" style="background:none; border:none; color:var(--m3-txt); font-size:24px; cursor:pointer">☰</button>
+    <div style="font-size: 20px; font-weight: 500; flex: 1">SubLink Material</div>
+    <button class="m3-btn" style="padding: 8px 16px" onclick="testSpeed()">全链路测速</button>
+    <button onclick="toggleMode()" style="background:none; border:none; color:var(--m3-txt); font-size:20px; cursor:pointer">🌓</button>
   </nav>
 
-  <div class="main">
+  <div class="body-box">
     <aside class="sidebar" id="sidebar">
-      <div style="padding: 20px; height: 100%; display: flex; flex-direction: column;">
-        <textarea id="raw" class="m3-input" rows="4" placeholder="粘贴节点链接..."></textarea>
-        <button class="m3-btn" onclick="parse()">解析节点</button>
-        <div id="list" style="flex: 1; overflow-y: auto; margin-top: 20px;"></div>
+      <div style="padding: 20px; display: flex; flex-direction: column; height: 100%">
+        <textarea id="raw-nodes" class="m3-input" rows="5" placeholder="粘贴节点 URI (ss/vmess/vless)..."></textarea>
+        <button class="m3-btn" onclick="parseNodes()">解析并导入</button>
+        <div id="node-list" style="flex: 1; overflow-y: auto; margin-top: 20px"></div>
       </div>
     </aside>
 
-    <main class="content">
+    <main class="content-view">
       <div class="browser-header">
-        <div style="display: flex; gap: 10px;">
-          <input type="text" id="b-url" class="m3-input" placeholder="输入网址或关键词搜索..." style="margin-bottom: 0;" onkeydown="if(event.key==='Enter')go()">
+        <div style="display: flex; gap: 10px">
+          <input type="text" id="url-input" class="m3-input" placeholder="使用 DuckDuckGo 搜索或输入网址..." style="margin-bottom: 0" onkeydown="if(event.key==='Enter')go()">
           <button class="m3-btn" onclick="go()">前往</button>
         </div>
       </div>
-      <div class="quick-links">
-        <div class="chip" onclick="quick('https://www.reddit.com')">📰reddit</div>
-        <div class="chip" onclick="quick('https://www.youtube.com')">📽️YouTube</div>
-        <div class="chip" onclick="quick('https://github.com')">💻GitHub</div>
-        <div class="chip" onclick="quick('https://music.youtube.com/')">🎵Youtube Music</div>
-        <div class="chip" onclick="quick('https://telegram.org')">🗨️telegram</div>
+      <div class="quick-bar">
+        <div class="m3-chip" onclick="quick('https://duckduckgo.com')">🦆 DuckDuckGo</div>
+        <div class="m3-chip" onclick="quick('https://nitter.net')">🐦 Nitter (X)</div>
+        <div class="m3-chip" onclick="quick('https://www.reddit.com')">🤖 Reddit</div>
+        <div class="m3-chip" onclick="quick('https://web.telegram.org')">✈️ Telegram</div>
+        <div class="m3-chip" onclick="quick('https://www.youtube.com')">📺 YouTube</div>
+        <div class="m3-chip" onclick="quick('https://github.com')">🐙 GitHub</div>
       </div>
-      <div id="viewport" style="flex: 1; display: flex;">
-        <div style="margin: auto; text-align: center; color: var(--md-sec-txt);">
-          <div style="font-size: 48px; margin-bottom: 10px;">📡</div>
-          <p>请选择节点并输入目标</p>
+      <div id="viewport" style="flex: 1; display: flex">
+        <div style="margin: auto; text-align: center; color: var(--m3-sec)">
+          <div style="font-size: 50px; margin-bottom: 10px">🌐</div>
+          <p>选择节点后，在上方开始浏览</p>
         </div>
       </div>
     </main>
@@ -103,100 +106,110 @@ iframe { flex: 1; border: none; background: #fff; }
 
 <script>
 let worker = '';
-let nodes = [];
+let nodeList = [];
 
-async function connect() {
-  const url = document.getElementById('w-url').value.trim().replace(/\/+$/, '');
-  if (!url) return;
-  try {
-    const res = await fetch(url + '/health');
-    if (res.ok) {
-      worker = url;
+function connect() {
+  const val = document.getElementById('worker-url').value.trim().replace(/\/+$/, '');
+  if(!val) return;
+  fetch(val + '/health').then(r => r.json()).then(d => {
+    if(d.ok) {
+      worker = val;
       document.getElementById('setup').style.display = 'none';
-      document.getElementById('app').classList.add('active');
+      document.getElementById('main-app').classList.add('ready');
     }
-  } catch(e) { alert('Worker 验证失败'); }
+  }).catch(() => alert("Worker 验证失败，请确认已部署且允许跨域。"));
 }
 
 function getFlag(name) {
-  const map = { "美国": "🇺🇸", "香港": "🇭🇰", "台湾": "🇹🇼", "日本": "🇯🇵", "韩国": "🇰🇷", "新加坡": "🇸🇬", "英国": "🇬🇧", "德国": "🇩🇪", "CN": "🇨🇳", "US": "🇺🇸", "HK": "🇭🇰", "TW": "🇹🇼", "JP": "🇯🇵", "SG": "🇸🇬" };
-  for(let k in map) if(name.toUpperCase().includes(k)) return map[k];
+  const m = { "美国": "🇺🇸", "香港": "🇭🇰", "台湾": "🇹🇼", "日本": "🇯🇵", "韩国": "🇰🇷", "新加坡": "🇸🇬", "英国": "🇬🇧", "德国": "🇩🇪", "CN": "🇨🇳", "US": "🇺🇸", "HK": "🇭🇰", "TW": "🇹🇼", "JP": "🇯🇵", "SG": "🇸🇬", "UK": "🇬🇧" };
+  for(let k in m) if(name.toUpperCase().includes(k)) return m[k];
   return "🌐";
 }
 
-function decodeStr(str) {
-  try { return decodeURIComponent(str); } catch {
-    try { return atob(str.replace(/-/g, '+').replace(/_/g, '/')); } catch { return str; }
-  }
+function safeBase64(str) {
+  try {
+    str = str.replace(/-/g, '+').replace(/_/g, '/');
+    while (str.length % 4) str += '=';
+    return atob(str);
+  } catch (e) { return str; }
 }
 
-function parse() {
-  const raw = document.getElementById('raw').value;
+function parseNodes() {
+  const raw = document.getElementById('raw-nodes').value;
   const lines = raw.split('\n');
-  nodes = [];
+  nodeList = [];
   lines.forEach(line => {
     line = line.trim();
     if(!line.includes('://')) return;
     let name = "未命名节点", proto = line.split('://')[0];
     
+    // 修复节点名称解析
     if(line.includes('#')) {
-      name = decodeStr(line.split('#').pop());
+      try { name = decodeURIComponent(line.split('#').pop()); } catch(e) {}
     } else if(proto === 'vmess') {
       try {
-        const j = JSON.parse(atob(line.split('://')[1]));
-        name = j.ps || j.remarks || name;
+        const json = JSON.parse(safeBase64(line.split('://')[1]));
+        name = json.ps || json.remarks || name;
       } catch(e) {}
     }
+    
     const parts = line.split('://')[1].split('@');
     const addr = (parts.length > 1 ? parts[1] : parts[0]).split(':')[0].split('?')[0];
-    nodes.push({ name, proto: proto.toUpperCase(), addr, raw: line, ms: null });
+    nodeList.push({ name, proto: proto.toUpperCase(), server: addr, raw: line, ms: null });
   });
   render();
 }
 
 function render() {
-  const list = document.getElementById('list');
-  list.innerHTML = nodes.map((n, i) => `
-    <div class="node-item" onclick="selectNode(${i})">
-      <div style="font-weight: 500;">${getFlag(n.name)} ${n.name}</div>
-      <div style="font-size: 11px; color: var(--md-sec-txt); font-family: 'Roboto Mono'; margin-top: 4px;">${n.proto} | ${n.addr}</div>
+  const div = document.getElementById('node-list');
+  div.innerHTML = nodeList.map((n, i) => `
+    <div class="node-item" id="node-${i}" onclick="selectNode(${i})">
+      <div style="font-weight: 500; font-size: 15px">${getFlag(n.name)} ${n.name}</div>
+      <div style="font-size: 11px; color: var(--m3-sec); font-family: 'Roboto Mono'; margin-top: 4px">${n.proto} | ${n.server}</div>
       <div class="node-ms" id="ms-${i}">${n.ms ? n.ms+'ms' : ''}</div>
     </div>
   `).join('');
 }
 
 function selectNode(i) {
-  document.querySelectorAll('.node-item').forEach((el, idx) => el.classList.toggle('active', i===idx));
-  testOne(i);
+  document.querySelectorAll('.node-item').forEach((el, idx) => el.classList.toggle('active', i === idx));
+  ping(i);
 }
 
-async function testOne(i) {
+async function ping(i) {
   const start = Date.now();
   try {
-    await fetch(`${worker}/?url=${encodeURIComponent('https://www.google.com/favicon.ico')}`, { mode: 'no-cors' });
-    nodes[i].ms = Date.now() - start;
-    document.getElementById(`ms-${i}`).textContent = nodes[i].ms + 'ms';
-  } catch { document.getElementById(`ms-${i}`).textContent = 'ERR'; }
+    // 测速：通过 Worker 代理请求一个小图标
+    await fetch(`${worker}/?url=${encodeURIComponent('https://duckduckgo.com/favicon.ico')}`, { mode: 'no-cors' });
+    nodeList[i].ms = Date.now() - start;
+    document.getElementById(`ms-${i}`).textContent = nodeList[i].ms + 'ms';
+  } catch { document.getElementById(`ms-${i}`).textContent = '超时'; }
 }
 
-async function testAll() {
-  for(let i=0; i<nodes.length; i++) await testOne(i);
+async function testSpeed() {
+  for(let i=0; i<nodeList.length; i++) await ping(i);
 }
 
 function go() {
-  let val = document.getElementById('b-url').value.trim();
+  let val = document.getElementById('url-input').value.trim();
   if(!val) return;
   let url = val;
+  // 如果不是网址，则使用 DuckDuckGo 搜索
   if(!val.includes('.') || val.includes(' ')) {
-    url = "https://www.google.com/search?q=" + encodeURIComponent(val);
+    url = "https://duckduckgo.com/?q=" + encodeURIComponent(val);
   } else if(!/^https?:\/\//i.test(val)) {
     url = "https://" + val;
   }
-  document.getElementById('b-url').value = url;
+  document.getElementById('url-input').value = url;
   document.getElementById('viewport').innerHTML = `<iframe src="${worker}/?url=${encodeURIComponent(url)}"></iframe>`;
 }
 
-function quick(u) { document.getElementById('b-url').value = u; go(); }
+function quick(u) { document.getElementById('url-input').value = u; go(); }
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('hide'); }
+function toggleMode() {
+  const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+}
 </script>
 </body>
 </html>
