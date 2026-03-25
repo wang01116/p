@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SubLink Pro Max</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg: #0a0c10; --s1: #11141a; --s2: #1a1f29; --b1: rgba(255,255,255,0.08);
+  --tx: #e6edf3; --tm: #7d8590; --acc: #2f81f7; --grn: #3fb950; --red: #f85149;
+  --sans: 'Space Grotesk', system-ui, sans-serif; --mono: 'IBM Plex Mono', monospace;
+}
+[data-theme="light"] {
+  --bg: #f6f8fa; --s1: #ffffff; --s2: #eff2f5; --b1: rgba(0,0,0,0.08);
+  --tx: #1f2328; --tm: #656d76; --acc: #0969da;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { height: 100vh; overflow: hidden; background: var(--bg); color: var(--tx); font-family: var(--sans); }
+
+/* LAYOUT */
+#setup-screen { position: fixed; inset: 0; z-index: 1000; background: var(--bg); display: flex; align-items: center; justify-content: center; }
+.app { display: none; grid-template-rows: 60px 1fr; height: 100vh; }
+.app.ready { display: grid; }
+
+.topbar { display: flex; align-items: center; padding: 0 20px; background: var(--s1); border-bottom: 1px solid var(--b1); gap: 15px; }
+.body { display: flex; overflow: hidden; }
+
+/* SIDEBAR */
+.sidebar { width: 340px; background: var(--s1); border-right: 1px solid var(--b1); display: flex; flex-direction: column; transition: 0.3s; }
+.sidebar.collapsed { width: 0; transform: translateX(-340px); }
+.sidebar-inner { width: 340px; height: 100%; display: flex; flex-direction: column; padding: 20px; }
+
+/* BROWSER AREA */
+.main-content { flex: 1; display: flex; flex-direction: column; background: #fff; position: relative; }
+.browser-bar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--s1); border-bottom: 1px solid var(--b1); }
+.quick-sites { display: flex; gap: 8px; padding: 8px 16px; background: var(--s2); border-bottom: 1px solid var(--b1); overflow-x: auto; }
+.site-tag { padding: 4px 10px; border-radius: 6px; background: var(--s1); border: 1px solid var(--b1); font-size: 12px; cursor: pointer; white-space: nowrap; }
+.site-tag:hover { border-color: var(--acc); color: var(--acc); }
+
+/* UI COMPONENTS */
+.input { width: 100%; background: var(--s2); border: 1px solid var(--b1); border-radius: 8px; padding: 10px; color: var(--tx); font-family: var(--mono); outline: none; }
+.btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: 0.2s; background: var(--acc); color: #fff; }
+.node-item { padding: 12px; border-radius: 12px; border: 1px solid var(--b1); margin-bottom: 8px; cursor: pointer; position: relative; }
+.node-item:hover { background: var(--s2); }
+.node-item.active { border-color: var(--acc); background: rgba(47, 129, 247, 0.1); }
+.ms-tag { position: absolute; right: 12px; top: 12px; font-size: 10px; font-family: var(--mono); color: var(--tm); }
+
+iframe { width: 100%; height: 100%; border: none; background: #fff; }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 8px 20px; border-radius: 20px; opacity: 0; transition: 0.3s; z-index: 2000; }
+
+</style>
+</head>
+<body>
+
+<div id="setup-screen">
+  <div style="text-align:center; width: 320px;">
+    <h1 style="margin-bottom:20px">SubLink Pro Max</h1>
+    <input type="text" id="setup-url" class="input" placeholder="Worker URL (https://...)" style="margin-bottom:15px; text-align:center">
+    <button class="btn" style="width:100%" onclick="initApp()">连接并启动</button>
+  </div>
+</div>
+
+<div class="app" id="main-app">
+  <header class="topbar">
+    <button onclick="document.getElementById('sidebar').classList.toggle('collapsed')" style="background:none; border:none; color:var(--tx); cursor:pointer; font-size:20px">☰</button>
+    <b style="font-size:18px">SubLink</b>
+    <div style="margin-left:auto; display:flex; gap:10px">
+      <button class="btn" onclick="speedTestAll()" style="background:var(--s2); color:var(--tx)">测速</button>
+      <button class="btn" onclick="document.body.setAttribute('data-theme', document.body.getAttribute('data-theme')==='light'?'dark':'light')">🌓</button>
+    </div>
+  </header>
+
+  <div class="body">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-inner">
+        <textarea id="raw-nodes" class="input" rows="5" placeholder="粘贴节点 URI..."></textarea>
+        <button class="btn" style="margin-top:10px; width:100%" onclick="parseNodes()">解析节点</button>
+        <div class="node-list" id="node-list" style="flex:1; overflow-y:auto; margin-top:15px"></div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="browser-bar">
+        <input type="text" id="b-url" class="input" placeholder="输入网址或关键词搜索..." onkeydown="if(event.key==='Enter')go()">
+        <button class="btn" onclick="go()">前往</button>
+      </div>
+      <div class="quick-sites">
+        <div class="site-tag" onclick="quickGo('google')">Google</div>
+        <div class="site-tag" onclick="quickGo('youtube')">YouTube</div>
+        <div class="site-tag" onclick="quickGo('nitter')">Nitter (Twitter X)</div>
+        <div class="site-tag" onclick="quickGo('yt-music')">YouTube Music</div>
+        <div class="site-tag" onclick="quickGo('bing')">Bing</div>
+      </div>
+      <div id="view" style="flex:1">
+        <div style="height:100%; display:flex; align-items:center; justify-content:center; color:var(--tm); flex-direction:column">
+           <span style="font-size:50px">📡</span>
+           <p>请选择节点并输入网址</p>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let workerBase = '';
+let nodeList = [];
+
+async function initApp() {
+  const url = document.getElementById('setup-url').value.trim().replace(/\/+$/, '');
+  if (!url) return;
+  try {
+    const res = await fetch(url + '/health');
+    if (res.ok) {
+      workerBase = url;
+      document.getElementById('setup-screen').style.display = 'none';
+      document.getElementById('main-app').classList.add('ready');
+    }
+  } catch (e) { alert("无法连接到 Worker，请检查地址和 CORS 设置"); }
+}
+
+// 节点解析核心 (修复乱码)
+function decodeNodeName(str) {
+  try {
+    let decoded = decodeURIComponent(str);
+    if (decoded.includes('%')) decoded = decodeURIComponent(decoded);
+    return decoded;
+  } catch (e) {
+    try { return atob(str.replace(/-/g, '+').replace(/_/g, '/')); } catch { return str; }
+  }
+}
+
+function parseNodes() {
+  const raw = document.getElementById('raw-nodes').value;
+  const lines = raw.split('\n');
+  nodeList = [];
+
+  lines.forEach(line => {
+    line = line.trim();
+    if (!line || !line.includes('://')) return;
+
+    let name = "未命名节点";
+    let proto = line.split('://')[0];
+    
+    // 逻辑：优先处理 # 后缀
+    if (line.includes('#')) {
+      const parts = line.split('#');
+      name = decodeNodeName(parts[parts.length - 1]);
+    } else if (proto === 'vmess') {
+      try {
+        const json = JSON.parse(atob(line.split('://')[1]));
+        name = json.ps || json.remarks || name;
+      } catch(e) {}
+    }
+    
+    const addr = line.split('@')[1] ? line.split('@')[1].split(':')[0] : "Address";
+    nodeList.push({ name, proto, raw: line, addr: addr.split('?')[0], latency: null });
+  });
+
+  renderNodes();
+}
+
+function renderNodes() {
+  const div = document.getElementById('node-list');
+  div.innerHTML = nodeList.map((n, i) => `
+    <div class="node-item" onclick="selectNode(${i})">
+      <div style="font-size:13px; font-weight:700; color:var(--tx)">${n.name}</div>
+      <div style="font-size:11px; color:var(--tm); font-family:var(--mono)">${n.proto.toUpperCase()} | ${n.addr}</div>
+      <span class="ms-tag" id="ms-${i}">${n.latency ? n.latency+'ms' : ''}</span>
+    </div>
+  `).join('');
+}
+
+function selectNode(i) {
+  document.querySelectorAll('.node-item').forEach((el, idx) => el.classList.toggle('active', idx === i));
+  showToast("已选择节点: " + nodeList[i].name);
+}
+
+// 测速功能 (基于 Worker 中转延迟)
+async function speedTestAll() {
+  showToast("正在测速...");
+  for (let i = 0; i < nodeList.length; i++) {
+    const start = Date.now();
+    try {
+      // 通过 Worker 尝试请求谷歌的一个小资源来测试节点链路
+      await fetch(`${workerBase}/?url=${encodeURIComponent('https://www.google.com/favicon.ico')}`, { mode: 'no-cors' });
+      const ms = Date.now() - start;
+      nodeList[i].latency = ms;
+      document.getElementById(`ms-${i}`).textContent = ms + 'ms';
+      document.getElementById(`ms-${i}`).style.color = ms < 500 ? 'var(--grn)' : 'var(--ylw)';
+    } catch(e) {
+      document.getElementById(`ms-${i}`).textContent = '超时';
+    }
+  }
+}
+
+function go() {
+  let val = document.getElementById('b-url').value.trim();
+  if (!val) return;
+
+  let url = val;
+  if (!val.includes('.') || val.includes(' ')) {
+    url = `https://www.google.com/search?q=${encodeURIComponent(val)}`;
+  } else if (!/^https?:\/\//i.test(val)) {
+    url = 'https://' + val;
+  }
+
+  document.getElementById('b-url').value = url;
+  const view = document.getElementById('view');
+  view.innerHTML = `<iframe src="${workerBase}/?url=${encodeURIComponent(url)}"></iframe>`;
+}
+
+function quickGo(site) {
+  const sites = {
+    'google': 'https://www.google.com',
+    'youtube': 'https://www.youtube.com',
+    'nitter': 'https://nitter.net',
+    'yt-music': 'https://music.youtube.com',
+    'bing': 'https://www.bing.com'
+  };
+  document.getElementById('b-url').value = sites[site];
+  go();
+}
+
+function showToast(m) {
+  const t = document.getElementById('toast');
+  t.textContent = m; t.style.opacity = 1;
+  setTimeout(() => t.style.opacity = 0, 3000);
+}
+</script>
+</body>
+</html>
