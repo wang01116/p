@@ -3,225 +3,200 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SubLink Pro Max - Material You</title>
+<title>SubLink Material v3</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto+Mono&display=swap');
 
 :root {
-  --md-bg: #0d1117; --md-surface: #161b22; --md-primary: #58a6ff;
-  --md-on-surface: #c9d1d9; --md-outline: #30363d; --md-chip: #21262d;
+  --md-bg: #0b0e14; --md-surf: #1a1c22; --md-prim: #a8c7fa; --md-on-prim: #062e6f;
+  --md-outline: #444746; --md-txt: #e3e3e3; --md-sec-txt: #c4c7c5;
 }
 [data-theme="light"] {
-  --md-bg: #f6f8fa; --md-surface: #ffffff; --md-primary: #0969da;
-  --md-on-surface: #1f2328; --md-outline: #d0d7de; --md-chip: #eff2f5;
+  --md-bg: #f8f9ff; --md-surf: #ffffff; --md-prim: #0b57d0; --md-on-prim: #ffffff;
+  --md-outline: #c4c7c5; --md-txt: #1f1f1f; --md-sec-txt: #444746;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Google Sans', system-ui; background: var(--md-bg); color: var(--md-on-surface); height: 100vh; overflow: hidden; transition: 0.3s; }
+body { font-family: 'Google Sans', sans-serif; background: var(--md-bg); color: var(--md-txt); height: 100vh; overflow: hidden; }
 
-/* SETUP SCREEN */
-#setup-screen { position: fixed; inset: 0; z-index: 1000; background: var(--md-bg); display: flex; align-items: center; justify-content: center; }
-.setup-card { background: var(--md-surface); padding: 40px; border-radius: 28px; width: 90%; max-width: 400px; text-align: center; border: 1px solid var(--md-outline); }
+/* SETUP */
+#setup { position: fixed; inset: 0; z-index: 999; background: var(--md-bg); display: flex; align-items: center; justify-content: center; }
+.card { background: var(--md-surf); padding: 32px; border-radius: 28px; width: 90%; max-width: 400px; text-align: center; border: 1px solid var(--md-outline); }
 
-/* MAIN APP */
+/* APP LAYOUT */
 .app { display: none; grid-template-rows: 64px 1fr; height: 100vh; }
-.app.ready { display: grid; }
-.topbar { display: flex; align-items: center; padding: 0 24px; background: var(--md-surface); border-bottom: 1px solid var(--md-outline); gap: 15px; }
-.body { display: flex; overflow: hidden; }
+.app.active { display: grid; }
+.navbar { display: flex; align-items: center; padding: 0 24px; gap: 16px; background: var(--md-surf); border-bottom: 1px solid var(--md-outline); }
 
-/* SIDEBAR */
-.sidebar { width: 340px; border-right: 1px solid var(--md-outline); display: flex; flex-direction: column; background: var(--md-bg); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-.sidebar.collapsed { width: 0; transform: translateX(-340px); border: none; }
-.sidebar-inner { width: 340px; padding: 20px; display: flex; flex-direction: column; height: 100%; }
+.main { display: flex; overflow: hidden; }
+.sidebar { width: 340px; background: var(--md-bg); border-right: 1px solid var(--md-outline); display: flex; flex-direction: column; transition: 0.3s; }
+.sidebar.collapsed { width: 0; transform: translateX(-340px); }
 
-/* INPUT & BUTTONS */
-.m3-input { width: 100%; background: var(--md-chip); border: 1px solid var(--md-outline); border-radius: 12px; padding: 12px 16px; color: var(--md-on-surface); font-family: 'Roboto Mono', monospace; font-size: 14px; margin-bottom: 12px; outline: none; }
-.m3-input:focus { border-color: var(--md-primary); }
-.m3-btn { background: var(--md-primary); color: #fff; padding: 10px 24px; border-radius: 100px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; }
-.m3-btn:hover { opacity: 0.85; }
+.content { flex: 1; display: flex; flex-direction: column; background: #fff; position: relative; }
 
-/* NODE LIST */
-.node-card { background: var(--md-surface); border: 1px solid var(--md-outline); padding: 16px; border-radius: 16px; margin-bottom: 10px; cursor: pointer; position: relative; transition: 0.2s; }
-.node-card:hover { border-color: var(--md-primary); }
-.node-card.active { background: rgba(88, 166, 255, 0.1); border-color: var(--md-primary); }
-.node-name { font-weight: 500; font-size: 15px; display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-.node-meta { font-size: 11px; color: #8b949e; font-family: 'Roboto Mono'; }
-.node-ms { position: absolute; right: 16px; top: 16px; font-size: 11px; font-weight: 700; color: var(--md-primary); }
+/* COMPONENTS */
+.m3-input { width: 100%; background: var(--md-surf); border: 1px solid var(--md-outline); border-radius: 12px; padding: 12px 16px; color: var(--md-txt); font-family: 'Roboto Mono', monospace; font-size: 14px; margin-bottom: 12px; outline: none; }
+.m3-btn { background: var(--md-prim); color: var(--md-on-prim); padding: 12px 24px; border-radius: 100px; border: none; font-weight: 700; cursor: pointer; }
+.m3-btn:hover { opacity: 0.9; }
 
-/* BROWSER */
-.main-content { flex: 1; display: flex; flex-direction: column; background: #fff; }
-.browser-header { background: var(--md-surface); border-bottom: 1px solid var(--md-outline); padding: 10px 16px; }
-.quick-chips { display: flex; gap: 8px; overflow-x: auto; padding: 8px 16px; background: var(--md-bg); border-bottom: 1px solid var(--md-outline); }
-.chip { padding: 6px 16px; background: var(--md-chip); border-radius: 8px; font-size: 12px; cursor: pointer; white-space: nowrap; border: 1px solid var(--md-outline); }
+.node-item { background: var(--md-surf); padding: 16px; border-radius: 16px; border: 1px solid var(--md-outline); margin-bottom: 10px; cursor: pointer; position: relative; }
+.node-item.active { border-color: var(--md-prim); background: rgba(168, 199, 250, 0.1); }
+.node-ms { position: absolute; right: 16px; top: 16px; font-size: 10px; color: var(--md-prim); font-weight: bold; }
+
+.browser-header { background: var(--md-surf); border-bottom: 1px solid var(--md-outline); padding: 12px 16px; }
+.quick-links { display: flex; gap: 8px; padding: 8px 16px; background: var(--md-bg); overflow-x: auto; border-bottom: 1px solid var(--md-outline); }
+.chip { padding: 6px 14px; background: var(--md-surf); border-radius: 8px; font-size: 12px; border: 1px solid var(--md-outline); cursor: pointer; white-space: nowrap; }
+
 iframe { flex: 1; border: none; background: #fff; }
-
-.toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #21262d; color: #fff; padding: 10px 24px; border-radius: 8px; opacity: 0; transition: 0.3s; z-index: 2000; pointer-events: none; }
 </style>
 </head>
 <body>
 
-<!-- SETUP -->
-<div id="setup-screen">
-  <div class="setup-card">
-    <h1 style="margin-bottom:10px">SubLink Pro Max</h1>
-    <p style="color:#8b949e; font-size:14px; margin-bottom:24px">Material You Web 代理控制台</p>
-    <input type="text" id="worker-url" class="m3-input" placeholder="https://your-worker.dev" style="text-align:center">
-    <button class="m3-btn" style="width:100%" onclick="connect()">连接并开始</button>
+<div id="setup">
+  <div class="card">
+    <h2 style="margin-bottom: 20px;">SubLink Pro Max</h2>
+    <input type="text" id="w-url" class="m3-input" placeholder="Worker URL (https://...)" style="text-align: center;">
+    <button class="m3-btn" style="width: 100%;" onclick="connect()">立即开启</button>
   </div>
 </div>
 
-<!-- APP -->
 <div class="app" id="app">
-  <header class="topbar">
-    <button onclick="toggleSidebar()" style="background:none; border:none; color:var(--md-on-surface); font-size:24px; cursor:pointer">☰</button>
-    <b style="font-size:20px; flex:1">SubLink Pro</b>
-    <button class="m3-btn" style="padding:8px 16px" onclick="speedTest()">测速</button>
-    <button onclick="toggleTheme()" style="background:none; border:none; color:var(--md-on-surface); font-size:20px; cursor:pointer">🌓</button>
-  </header>
+  <nav class="navbar">
+    <button onclick="document.getElementById('sidebar').classList.toggle('collapsed')" style="background:none; border:none; color:var(--md-txt); font-size:24px; cursor:pointer">☰</button>
+    <div style="font-size: 20px; font-weight: 500; flex: 1;">SubLink</div>
+    <button class="m3-btn" style="padding: 8px 16px;" onclick="testAll()">全测速</button>
+    <button onclick="document.body.setAttribute('data-theme', document.body.getAttribute('data-theme')==='light'?'dark':'light')" style="background:none; border:none; color:var(--md-txt); font-size:20px; cursor:pointer">🌓</button>
+  </nav>
 
-  <div class="body">
+  <div class="main">
     <aside class="sidebar" id="sidebar">
-      <div class="sidebar-inner">
-        <textarea id="raw-nodes" class="m3-input" rows="4" placeholder="粘贴节点 URI (ss/vmess/vless)..."></textarea>
-        <button class="m3-btn" onclick="parseNodes()">解析并导入</button>
-        <div id="node-list" style="flex:1; overflow-y:auto; margin-top:20px; padding-right:5px"></div>
+      <div style="padding: 20px; height: 100%; display: flex; flex-direction: column;">
+        <textarea id="raw" class="m3-input" rows="4" placeholder="粘贴节点链接..."></textarea>
+        <button class="m3-btn" onclick="parse()">解析节点</button>
+        <div id="list" style="flex: 1; overflow-y: auto; margin-top: 20px;"></div>
       </div>
     </aside>
 
-    <main class="main-content">
+    <main class="content">
       <div class="browser-header">
-        <div style="display:flex; gap:10px">
-          <input type="text" id="url-input" class="m3-input" placeholder="输入网址或搜索关键词..." style="margin-bottom:0" onkeydown="if(event.key==='Enter')go()">
+        <div style="display: flex; gap: 10px;">
+          <input type="text" id="b-url" class="m3-input" placeholder="输入网址或关键词搜索..." style="margin-bottom: 0;" onkeydown="if(event.key==='Enter')go()">
           <button class="m3-btn" onclick="go()">前往</button>
         </div>
       </div>
-      <div class="quick-chips">
+      <div class="quick-links">
         <div class="chip" onclick="quick('https://www.google.com')">Google</div>
         <div class="chip" onclick="quick('https://www.youtube.com')">YouTube</div>
-        <div class="chip" onclick="quick('https://nitter.net')">Nitter (X)</div>
         <div class="chip" onclick="quick('https://github.com')">GitHub</div>
+        <div class="chip" onclick="quick('https://nitter.net')">Twitter (Nitter)</div>
         <div class="chip" onclick="quick('https://po18.tw')">PO18</div>
-        <div class="chip" onclick="quick('https://music.youtube.com')">YouTube Music</div>
       </div>
-      <div id="viewport" style="flex:1; display:flex">
-         <div style="margin:auto; text-align:center; color:#8b949e">
-           <p style="font-size:48px; margin-bottom:16px">🌐</p>
-           <p>请选择节点并输入网址开始</p>
-         </div>
+      <div id="viewport" style="flex: 1; display: flex;">
+        <div style="margin: auto; text-align: center; color: var(--md-sec-txt);">
+          <div style="font-size: 48px; margin-bottom: 10px;">📡</div>
+          <p>请选择节点并输入目标</p>
+        </div>
       </div>
     </main>
   </div>
 </div>
 
-<div id="toast" class="toast"></div>
-
 <script>
 let worker = '';
-let nodeList = [];
+let nodes = [];
 
-function connect() {
-  const val = document.getElementById('worker-url').value.trim().replace(/\/+$/, '');
-  if(!val) return;
-  fetch(val + '/health').then(r => r.json()).then(d => {
-    if(d.ok) {
-      worker = val;
-      document.getElementById('setup-screen').style.display = 'none';
-      document.getElementById('app').classList.add('ready');
-      showToast("连接成功");
+async function connect() {
+  const url = document.getElementById('w-url').value.trim().replace(/\/+$/, '');
+  if (!url) return;
+  try {
+    const res = await fetch(url + '/health');
+    if (res.ok) {
+      worker = url;
+      document.getElementById('setup').style.display = 'none';
+      document.getElementById('app').classList.add('active');
     }
-  }).catch(() => alert("Worker 连接失败，请检查 URL 和 CORS"));
+  } catch(e) { alert('Worker 验证失败'); }
 }
 
 function getFlag(name) {
-  const flags = { "美国": "🇺🇸", "香港": "🇭🇰", "台湾": "🇹🇼", "日本": "🇯🇵", "韩国": "🇰🇷", "新加坡": "🇸🇬", "英国": "🇬🇧", "德国": "🇩🇪", "中国": "🇨🇳", "US": "🇺🇸", "HK": "🇭🇰", "TW": "🇹🇼", "JP": "🇯🇵", "SG": "🇸🇬", "KR": "🇰🇷" };
-  for(let k in flags) if(name.toUpperCase().includes(k)) return flags[k];
+  const map = { "美国": "🇺🇸", "香港": "🇭🇰", "台湾": "🇹🇼", "日本": "🇯🇵", "韩国": "🇰🇷", "新加坡": "🇸🇬", "英国": "🇬🇧", "德国": "🇩🇪", "CN": "🇨🇳", "US": "🇺🇸", "HK": "🇭🇰", "TW": "🇹🇼", "JP": "🇯🇵", "SG": "🇸🇬" };
+  for(let k in map) if(name.toUpperCase().includes(k)) return map[k];
   return "🌐";
 }
 
-function safeDecode(str) {
+function decodeStr(str) {
   try { return decodeURIComponent(str); } catch {
     try { return atob(str.replace(/-/g, '+').replace(/_/g, '/')); } catch { return str; }
   }
 }
 
-function parseNodes() {
-  const raw = document.getElementById('raw-nodes').value;
+function parse() {
+  const raw = document.getElementById('raw').value;
   const lines = raw.split('\n');
-  nodeList = [];
+  nodes = [];
   lines.forEach(line => {
     line = line.trim();
     if(!line.includes('://')) return;
     let name = "未命名节点", proto = line.split('://')[0];
     
-    // 修复乱码解析逻辑
     if(line.includes('#')) {
-      name = safeDecode(line.split('#').pop());
+      name = decodeStr(line.split('#').pop());
     } else if(proto === 'vmess') {
       try {
-        const json = JSON.parse(atob(line.split('://')[1]));
-        name = json.ps || json.remarks || name;
+        const j = JSON.parse(atob(line.split('://')[1]));
+        name = j.ps || j.remarks || name;
       } catch(e) {}
     }
-    
     const parts = line.split('://')[1].split('@');
-    const addr = (parts.length > 1 ? parts[1] : parts[0]).split('?')[0].split(':');
-    nodeList.push({ name, proto: proto.toUpperCase(), server: addr[0], port: addr[1]||'443', raw: line, ms: null });
+    const addr = (parts.length > 1 ? parts[1] : parts[0]).split(':')[0].split('?')[0];
+    nodes.push({ name, proto: proto.toUpperCase(), addr, raw: line, ms: null });
   });
-  renderNodes();
+  render();
 }
 
-function renderNodes() {
-  const list = document.getElementById('node-list');
-  list.innerHTML = nodeList.map((n, i) => `
-    <div class="node-card" onclick="selectNode(${i})">
-      <div class="node-name"><span>${getFlag(n.name)}</span> ${n.name}</div>
-      <div class="node-meta">${n.proto} | Port: ${n.port} | ${n.server}</div>
+function render() {
+  const list = document.getElementById('list');
+  list.innerHTML = nodes.map((n, i) => `
+    <div class="node-item" onclick="selectNode(${i})">
+      <div style="font-weight: 500;">${getFlag(n.name)} ${n.name}</div>
+      <div style="font-size: 11px; color: var(--md-sec-txt); font-family: 'Roboto Mono'; margin-top: 4px;">${n.proto} | ${n.addr}</div>
       <div class="node-ms" id="ms-${i}">${n.ms ? n.ms+'ms' : ''}</div>
     </div>
   `).join('');
 }
 
 function selectNode(i) {
-  document.querySelectorAll('.node-card').forEach((c, idx) => c.classList.toggle('active', i === idx));
-  showToast("切换至: " + nodeList[i].name);
+  document.querySelectorAll('.node-item').forEach((el, idx) => el.classList.toggle('active', i===idx));
+  testOne(i);
 }
 
-async function speedTest() {
-  if(!worker) return;
-  showToast("正在测速...");
-  for(let i=0; i<nodeList.length; i++) {
-    const start = Date.now();
-    try {
-      await fetch(`${worker}/?url=${encodeURIComponent('https://www.google.com/favicon.ico')}`, { mode: 'no-cors' });
-      nodeList[i].ms = Date.now() - start;
-      document.getElementById(`ms-${i}`).textContent = nodeList[i].ms + 'ms';
-    } catch { document.getElementById(`ms-${i}`).textContent = '超时'; }
-  }
+async function testOne(i) {
+  const start = Date.now();
+  try {
+    await fetch(`${worker}/?url=${encodeURIComponent('https://www.google.com/favicon.ico')}`, { mode: 'no-cors' });
+    nodes[i].ms = Date.now() - start;
+    document.getElementById(`ms-${i}`).textContent = nodes[i].ms + 'ms';
+  } catch { document.getElementById(`ms-${i}`).textContent = 'ERR'; }
+}
+
+async function testAll() {
+  for(let i=0; i<nodes.length; i++) await testOne(i);
 }
 
 function go() {
-  let input = document.getElementById('url-input').value.trim();
-  if(!input) return;
-  let url = input;
-  if(!input.includes('.') || input.includes(' ')) {
-    url = "https://www.google.com/search?q=" + encodeURIComponent(input);
-  } else if(!/^https?:\/\//i.test(input)) {
-    url = "https://" + input;
+  let val = document.getElementById('b-url').value.trim();
+  if(!val) return;
+  let url = val;
+  if(!val.includes('.') || val.includes(' ')) {
+    url = "https://www.google.com/search?q=" + encodeURIComponent(val);
+  } else if(!/^https?:\/\//i.test(val)) {
+    url = "https://" + val;
   }
-  document.getElementById('url-input').value = url;
+  document.getElementById('b-url').value = url;
   document.getElementById('viewport').innerHTML = `<iframe src="${worker}/?url=${encodeURIComponent(url)}"></iframe>`;
 }
 
-function quick(u) { document.getElementById('url-input').value = u; go(); }
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
-function toggleTheme() {
-  const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', t);
-}
-function showToast(m) {
-  const t = document.getElementById('toast'); t.textContent = m; t.style.opacity = 1;
-  setTimeout(() => t.style.opacity = 0, 3000);
-}
+function quick(u) { document.getElementById('b-url').value = u; go(); }
 </script>
 </body>
 </html>
