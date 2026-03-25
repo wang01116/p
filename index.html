@@ -3,946 +3,409 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SubLink</title>
+<title>SubLink Pro - 免客户端 Web 代理</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 :root {
+  /* Dark Mode (Default) */
   --bg:       #07090e;
   --s1:       #0e1117;
   --s2:       #141820;
   --s3:       #1c2130;
   --b1:       rgba(255,255,255,0.06);
   --b2:       rgba(255,255,255,0.11);
-  --b3:       rgba(255,255,255,0.18);
   --tx:       #dde2ee;
   --tm:       #606880;
   --td:       #3a4255;
   --acc:      #3d7eff;
-  --acc2:     #6c5ce7;
+  --acc-rgb:  61, 126, 255;
   --grn:      #00d68f;
   --red:      #ff4d6a;
   --ylw:      #ffbe0b;
   --mono:     'IBM Plex Mono', monospace;
   --sans:     'Space Grotesk', system-ui, sans-serif;
-  --r:        10px;
-  --r2:       14px;
+}
+
+[data-theme="light"] {
+  --bg:       #f4f7fa;
+  --s1:       #ffffff;
+  --s2:       #edf2f7;
+  --s3:       #e2e8f0;
+  --b1:       rgba(0,0,0,0.06);
+  --b2:       rgba(0,0,0,0.1);
+  --tx:       #1a202c;
+  --tm:       #4a5568;
+  --td:       #a0aec0;
+  --acc:      #2563eb;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; overflow: hidden; }
-body { background: var(--bg); color: var(--tx); font-family: var(--sans); font-size: 14px; }
+html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--tx); font-family: var(--sans); transition: background 0.3s; }
 
-/* ═══ LAYOUT ═══ */
-.app { display: grid; grid-template-rows: 52px 1fr; height: 100vh; }
+/* ═══ LOGIN SCREEN ═══ */
+#setup-screen {
+  position: fixed; inset: 0; z-index: 999;
+  background: var(--bg); display: flex; align-items: center; justify-content: center;
+}
+.setup-card {
+  width: 100%; max-width: 400px; padding: 32px;
+  background: var(--s1); border-radius: 20px; border: 1px solid var(--b1);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3); text-align: center;
+}
+.setup-logo { font-size: 40px; margin-bottom: 16px; }
+
+/* ═══ MAIN APP LAYOUT ═══ */
+.app { display: none; grid-template-rows: 52px 1fr; height: 100vh; }
+.app.ready { display: grid; }
+
 .topbar {
-  display: flex; align-items: center; gap: 12px;
-  padding: 0 20px; border-bottom: 1px solid var(--b1);
-  background: var(--s1);
+  display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--b1);
+  background: var(--s1); z-index: 10;
 }
-.topbar-logo {
-  display: flex; align-items: center; gap: 9px;
-  font-weight: 700; font-size: 15px; letter-spacing: -0.3px;
-}
-.logo-icon {
-  width: 28px; height: 28px; border-radius: 7px;
-  background: linear-gradient(135deg, var(--acc), var(--acc2));
-  display: grid; place-items: center; font-size: 14px;
-}
-.topbar-tabs { display: flex; gap: 2px; margin-left: 24px; }
-.topbar-tab {
-  padding: 6px 14px; border-radius: 7px; font-size: 13px; font-weight: 500;
-  background: none; border: none; color: var(--tm); cursor: pointer;
-  transition: all 0.18s; font-family: var(--sans);
-}
-.topbar-tab.active { background: var(--s3); color: var(--tx); }
-.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-.worker-status {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 12px; font-family: var(--mono); color: var(--tm);
-}
-.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--td); }
-.dot.ok { background: var(--grn); box-shadow: 0 0 6px var(--grn); }
-.dot.err { background: var(--red); }
+.topbar-logo { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 15px; cursor: pointer; }
+.logo-icon { width: 28px; height: 28px; border-radius: 7px; background: var(--acc); display: grid; place-items: center; color: #fff; }
 
-.body { display: grid; grid-template-columns: 340px 1fr; overflow: hidden; }
+.body { display: flex; overflow: hidden; }
 
 /* ═══ SIDEBAR ═══ */
 .sidebar {
-  border-right: 1px solid var(--b1);
-  display: flex; flex-direction: column;
-  background: var(--s1); overflow: hidden;
+  width: 320px; border-right: 1px solid var(--b1);
+  display: flex; flex-direction: column; background: var(--s1);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s;
 }
-.sidebar-section { padding: 16px; flex-shrink: 0; }
+.sidebar.collapsed { width: 0; transform: translateX(-320px); border-right: none; }
+
+.sidebar-content { width: 320px; display: flex; flex-direction: column; height: 100%; }
+.sidebar-section { padding: 16px; }
 .section-label { font-size: 10px; color: var(--tm); letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 10px; font-weight: 600; }
 
-.worker-input-row { display: flex; gap: 6px; margin-bottom: 12px; }
-.worker-input-row input {
-  flex: 1; background: var(--s2); border: 1px solid var(--b1);
-  border-radius: 8px; color: var(--tx); font-family: var(--mono);
-  font-size: 11px; padding: 8px 10px; outline: none;
-}
-.worker-input-row input:focus { border-color: var(--acc); }
-.btn-sm {
-  padding: 7px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
-  border: none; cursor: pointer; font-family: var(--sans); white-space: nowrap;
-  transition: all 0.18s;
-}
-.btn-sm.primary { background: var(--acc); color: #fff; }
-.btn-sm.primary:hover { opacity: 0.85; }
-.btn-sm.ghost { background: var(--s3); color: var(--tx); }
-.btn-sm.ghost:hover { background: var(--b2); }
-
-.sub-input-row { display: flex; flex-direction: column; gap: 6px; }
 textarea.sub-url {
   width: 100%; background: var(--s2); border: 1px solid var(--b1);
-  border-radius: 8px; color: var(--tx); font-family: var(--mono);
-  font-size: 11px; padding: 10px; resize: none; outline: none; line-height: 1.6;
+  border-radius: 12px; color: var(--tx); font-family: var(--mono);
+  font-size: 11px; padding: 12px; resize: none; outline: none; transition: border 0.2s;
 }
 textarea.sub-url:focus { border-color: var(--acc); }
-textarea.sub-url::placeholder { color: var(--td); }
 
-.input-tabs { display: flex; gap: 4px; padding: 12px 16px 0; flex-shrink: 0; }
-.input-tab {
-  flex: 1; padding: 7px; text-align: center; border-radius: 7px;
-  font-size: 12px; font-weight: 600; background: none; border: none;
-  color: var(--tm); cursor: pointer; font-family: var(--sans);
-  background: var(--s2); transition: all 0.18s;
-}
-.input-tab.active { background: var(--s3); color: var(--tx); }
-
-.tab-panel { display: none; padding: 10px 16px 14px; flex-shrink: 0; }
-.tab-panel.active { display: block; }
-
-.parse-btn {
-  width: 100%; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 700;
-  border: none; cursor: pointer; font-family: var(--sans);
-  background: var(--acc); color: #fff; margin-top: 8px; transition: all 0.18s;
-}
-.parse-btn:hover { opacity: 0.88; }
-.parse-btn:active { transform: scale(0.98); }
-
-.divider { height: 1px; background: var(--b1); margin: 0; }
-
-.node-list-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 16px 8px; flex-shrink: 0;
-}
-.node-count { font-size: 11px; font-family: var(--mono); color: var(--tm); background: var(--s2); padding: 2px 8px; border-radius: 20px; }
-
-.search-wrap { padding: 0 16px 10px; flex-shrink: 0; }
-.search-input {
-  width: 100%; background: var(--s2); border: 1px solid var(--b1);
-  border-radius: 8px; color: var(--tx); font-family: var(--mono);
-  font-size: 12px; padding: 7px 10px; outline: none;
-}
-.search-input:focus { border-color: var(--acc); }
-
-.node-list { flex: 1; overflow-y: auto; padding: 0 8px 8px; }
-.node-list::-webkit-scrollbar { width: 3px; }
-.node-list::-webkit-scrollbar-thumb { background: var(--b2); border-radius: 2px; }
-
+.node-list { flex: 1; overflow-y: auto; padding: 8px; }
 .node-item {
-  display: flex; align-items: center; gap: 9px;
-  padding: 10px 10px; border-radius: 9px; cursor: pointer;
-  margin-bottom: 3px; border: 1px solid transparent;
-  transition: all 0.15s;
+  display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 10px;
+  cursor: pointer; margin-bottom: 4px; border: 1px solid transparent; transition: all 0.2s;
 }
 .node-item:hover { background: var(--s2); }
-.node-item.active { background: rgba(61,126,255,0.1); border-color: rgba(61,126,255,0.28); }
-
-.proto-pill {
-  font-size: 9px; font-family: var(--mono); font-weight: 500; text-transform: uppercase;
-  padding: 2px 6px; border-radius: 4px; flex-shrink: 0;
-}
-.p-ss      { background: rgba(0,214,143,0.12); color: #00d68f; }
-.p-vmess   { background: rgba(61,126,255,0.12); color: #3d7eff; }
-.p-vless   { background: rgba(108,92,231,0.12); color: #a29bfe; }
-.p-trojan  { background: rgba(255,190,11,0.12); color: #ffbe0b; }
-.p-hysteria{ background: rgba(255,77,106,0.12); color: #ff4d6a; }
-.p-unknown { background: rgba(96,104,128,0.12); color: #606880; }
-
-.node-text { flex: 1; min-width: 0; }
-.node-name { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.node-addr { font-size: 11px; color: var(--tm); font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
-
-.lat-badge { font-size: 10px; font-family: var(--mono); padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
-.lat-good  { background: rgba(0,214,143,0.1); color: var(--grn); }
-.lat-mid   { background: rgba(255,190,11,0.1); color: var(--ylw); }
-.lat-bad   { background: rgba(255,77,106,0.1); color: var(--red); }
-.lat-none  { background: var(--s2); color: var(--td); }
-
-.empty-hint { text-align: center; padding: 50px 20px; color: var(--td); }
-.empty-hint .ico { font-size: 32px; margin-bottom: 10px; opacity: 0.5; }
-.empty-hint p { font-size: 13px; line-height: 1.7; color: var(--tm); }
-
-/* ═══ MAIN PANEL ═══ */
-.main-panel { display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
-.panel-header {
-  padding: 16px 24px; border-bottom: 1px solid var(--b1);
-  background: var(--s1); flex-shrink: 0;
-  display: flex; align-items: flex-start; gap: 12px;
-}
-.panel-header-text { flex: 1; }
-.panel-title { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
-.panel-sub { font-size: 12px; color: var(--tm); font-family: var(--mono); margin-top: 3px; }
-.panel-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
-.panel-body::-webkit-scrollbar { width: 3px; }
-.panel-body::-webkit-scrollbar-thumb { background: var(--b2); border-radius: 2px; }
+.node-item.active { background: rgba(var(--acc-rgb), 0.1); border-color: var(--acc); }
 
 /* ═══ BROWSER VIEW ═══ */
+.main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
 .browser-bar {
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px 24px; border-bottom: 1px solid var(--b1);
-  background: var(--s1); flex-shrink: 0;
+  display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+  background: var(--s1); border-bottom: 1px solid var(--b1);
 }
-.browser-bar input {
-  flex: 1; background: var(--s2); border: 1px solid var(--b1);
+.url-input-wrap { flex: 1; position: relative; }
+.url-input {
+  width: 100%; background: var(--s2); border: 1px solid var(--b1);
   border-radius: 8px; color: var(--tx); font-family: var(--mono);
-  font-size: 12px; padding: 8px 12px; outline: none;
+  font-size: 13px; padding: 8px 12px; outline: none;
 }
-.browser-bar input:focus { border-color: var(--acc); }
-.browser-frame {
-  flex: 1; border: none; width: 100%; background: #fff;
-  display: block;
-}
-.browser-placeholder {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  color: var(--tm); gap: 10px; padding: 40px;
-}
-.browser-placeholder .ico { font-size: 48px; opacity: 0.3; }
-.browser-placeholder p { font-size: 13px; text-align: center; line-height: 1.8; max-width: 360px; }
+.browser-frame-container { flex: 1; background: #fff; overflow: hidden; }
+iframe { width: 100%; height: 100%; border: none; }
 
-/* ═══ CARDS ═══ */
-.cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-.card {
-  background: var(--s1); border: 1px solid var(--b1);
-  border-radius: var(--r); padding: 13px 15px;
+/* ═══ UI COMPONENTS ═══ */
+.btn {
+  padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 600;
+  border: none; cursor: pointer; transition: 0.2s; font-family: var(--sans);
 }
-.card .lbl { font-size: 10px; color: var(--tm); letter-spacing: 0.9px; text-transform: uppercase; margin-bottom: 6px; }
-.card .val { font-size: 13px; font-family: var(--mono); word-break: break-all; }
+.btn-primary { background: var(--acc); color: #fff; width: 100%; }
+.btn-primary:hover { opacity: 0.9; }
+.btn-icon { background: none; color: var(--tm); font-size: 18px; padding: 6px; display: flex; align-items: center; justify-content: center; border-radius: 6px; }
+.btn-icon:hover { background: var(--s3); color: var(--tx); }
 
-.notice {
-  background: rgba(255,190,11,0.07); border: 1px solid rgba(255,190,11,0.18);
-  border-radius: var(--r); padding: 13px 15px; margin-bottom: 14px;
-  font-size: 13px; color: #c8a233; line-height: 1.7;
+.proto-pill {
+  font-size: 9px; font-family: var(--mono); font-weight: 700;
+  padding: 2px 6px; border-radius: 4px; text-transform: uppercase;
+  background: var(--s3); color: var(--tm);
 }
-.notice strong { display: block; margin-bottom: 4px; color: var(--ylw); }
 
-.infobox {
-  background: rgba(61,126,255,0.07); border: 1px solid rgba(61,126,255,0.16);
-  border-radius: var(--r); padding: 13px 15px; margin-bottom: 14px;
-  font-size: 13px; line-height: 1.8; color: #8ba8d4;
-}
-.infobox strong { color: #6ea0ff; display: block; margin-bottom: 5px; }
-.infobox code { font-family: var(--mono); background: rgba(61,126,255,0.12); padding: 1px 5px; border-radius: 4px; font-size: 11px; color: #88b4ff; }
-
-.stat-row { display: flex; gap: 10px; margin-bottom: 16px; }
-.stat { flex: 1; background: var(--s1); border: 1px solid var(--b1); border-radius: var(--r); padding: 13px 14px; text-align: center; }
-.stat .n { font-size: 28px; font-weight: 700; font-family: var(--mono); }
-.stat .l { font-size: 10px; color: var(--tm); text-transform: uppercase; letter-spacing: 0.7px; margin-top: 2px; }
-
-.action-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-.act-btn {
-  padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600;
-  border: 1px solid var(--b2); background: var(--s1); color: var(--tx);
-  cursor: pointer; font-family: var(--sans); transition: all 0.18s;
-}
-.act-btn:hover { background: var(--s2); border-color: var(--b3); }
-.act-btn.primary { background: var(--acc); color: #fff; border-color: transparent; }
-.act-btn.primary:hover { opacity: 0.87; }
-.act-btn.green { background: rgba(0,214,143,0.12); color: var(--grn); border-color: rgba(0,214,143,0.2); }
-
-.raw-box {
-  background: var(--s1); border: 1px solid var(--b1);
-  border-radius: var(--r); padding: 13px 15px; margin-bottom: 14px;
-}
-.raw-box .lbl { font-size: 10px; color: var(--tm); text-transform: uppercase; letter-spacing: 0.9px; margin-bottom: 8px; }
-.raw-box .content { font-family: var(--mono); font-size: 11px; color: var(--tm); word-break: break-all; line-height: 1.7; }
-
-/* ═══ TOAST ═══ */
 .toast {
-  position: fixed; bottom: 20px; right: 20px;
-  background: var(--s3); border: 1px solid var(--b2); color: var(--tx);
-  padding: 11px 16px; border-radius: var(--r); font-size: 13px; font-weight: 600;
-  opacity: 0; transform: translateY(6px); transition: all 0.22s;
-  pointer-events: none; z-index: 9999; font-family: var(--sans);
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: #1c2130; color: #fff; padding: 10px 20px; border-radius: 10px;
+  font-size: 13px; opacity: 0; transition: 0.3s; z-index: 1000;
 }
-.toast.show { opacity: 1; transform: none; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* scrollbar for panel */
-.panel-body::-webkit-scrollbar { width: 3px; }
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 768px) {
+  .sidebar { position: absolute; height: calc(100% - 52px); z-index: 5; }
+}
 </style>
 </head>
 <body>
-<div class="app">
 
-  <!-- TOP BAR -->
+<!-- 1. SETUP SCREEN (LOGIN) -->
+<div id="setup-screen">
+  <div class="setup-card">
+    <div class="setup-logo">⚡</div>
+    <h2 style="margin-bottom:8px">配置 Worker 连接</h2>
+    <p style="font-size:13px; color:var(--tm); margin-bottom:24px">请输入你的 Cloudflare Worker 部署地址以开始</p>
+    <input type="text" id="setup-worker-url" class="url-input" placeholder="https://your-worker.name.workers.dev" style="margin-bottom:16px; text-align:center">
+    <button class="btn btn-primary" onclick="initApp()">连接并进入</button>
+    <p id="setup-msg" style="margin-top:16px; font-size:12px; color:var(--red)"></p>
+  </div>
+</div>
+
+<!-- 2. MAIN APP -->
+<div class="app" id="main-app">
   <div class="topbar">
-    <div class="topbar-logo">
+    <button class="btn-icon" style="margin-right:12px" onclick="toggleSidebar()">☰</button>
+    <div class="topbar-logo" onclick="location.reload()">
       <div class="logo-icon">⚡</div>
-      SubLink
+      <span>SubLink Pro</span>
     </div>
-    <div class="topbar-tabs">
-      <button class="topbar-tab active" onclick="switchView('nodes')" id="tab-nodes">节点管理</button>
-      <button class="topbar-tab" onclick="switchView('browser')" id="tab-browser">浏览器</button>
-    </div>
-    <div class="topbar-right">
-      <div class="worker-status">
-        <div class="dot" id="worker-dot"></div>
-        <span id="worker-label">Worker 未配置</span>
-      </div>
+    <div style="margin-left:auto; display:flex; gap:8px">
+      <button class="btn-icon" onclick="toggleTheme()" title="切换主题">🌓</button>
+      <div id="worker-status-dot" style="width:8px; height:8px; border-radius:50%; background:var(--grn); align-self:center; margin-left:10px"></div>
     </div>
   </div>
 
   <div class="body">
-
-    <!-- ── SIDEBAR ── -->
-    <div class="sidebar">
-      <div class="sidebar-section">
-        <div class="section-label">Worker 地址</div>
-        <div class="worker-input-row">
-          <input type="text" id="worker-url" placeholder="https://sublink-worker.xxx.workers.dev" value="">
-          <button class="btn-sm primary" onclick="testWorker()">连接</button>
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-content">
+        <div class="sidebar-section">
+          <div class="section-label">添加节点 URI</div>
+          <textarea class="sub-url" id="raw-input" rows="5" placeholder="ss://...&#10;vmess://...&#10;vless://..."></textarea>
+          <button class="btn btn-primary" style="margin-top:8px" onclick="parseRaw()">解析节点</button>
         </div>
-        <div style="font-size:11px; color:var(--td); line-height:1.6">
-          部署 <code style="font-family:var(--mono); color:var(--tm)">worker/index.js</code> 到 Cloudflare，填入地址后启用订阅拉取和浏览器中转
-        </div>
-      </div>
+        
+        <div class="divider" style="height:1px; background:var(--b1)"></div>
 
-      <div class="divider"></div>
-
-      <div class="input-tabs">
-        <button class="input-tab active" onclick="switchInputTab('sub')" id="itab-sub">订阅链接</button>
-        <button class="input-tab" onclick="switchInputTab('raw')" id="itab-raw">手动节点</button>
-      </div>
-
-      <div class="tab-panel active" id="ipanel-sub">
-        <textarea class="sub-url" id="sub-url" rows="3" placeholder="粘贴订阅 URL（每行一个）&#10;支持 Clash YAML / Base64 / SIP008"></textarea>
-        <button class="parse-btn" onclick="fetchSub()">🔍 拉取并解析</button>
-        <button class="parse-btn" style="background:var(--s3);color:var(--tx);margin-top:6px" onclick="loadDemo()">加载演示节点</button>
-      </div>
-
-      <div class="tab-panel" id="ipanel-raw">
-        <textarea class="sub-url" id="raw-input" rows="7" placeholder="每行一个节点 URI：&#10;ss://...&#10;vmess://...&#10;vless://...&#10;trojan://...&#10;hysteria2://..."></textarea>
-        <button class="parse-btn" onclick="parseRaw()">🔍 解析节点</button>
-      </div>
-
-      <div class="divider"></div>
-
-      <div class="node-list-header">
-        <div class="section-label" style="margin:0">节点</div>
-        <span class="node-count" id="node-count">0</span>
-      </div>
-
-      <div class="search-wrap">
-        <input class="search-input" type="text" placeholder="搜索..." oninput="filterNodes(this.value)" id="search">
-      </div>
-
-      <div class="node-list" id="node-list">
-        <div class="empty-hint">
-          <div class="ico">📡</div>
-          <p>输入订阅链接或节点 URI，<br>解析后在此显示</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── MAIN PANEL: nodes view ── -->
-    <div class="main-panel" id="view-nodes">
-      <div class="panel-header">
-        <div class="panel-header-text">
-          <div class="panel-title" id="panel-title">节点详情</div>
-          <div class="panel-sub" id="panel-sub">从左侧选择节点</div>
-        </div>
-      </div>
-      <div class="panel-body" id="panel-body">
-        <div id="welcome-content">
-          <div class="infobox">
-            <strong>📌 使用说明</strong>
-            1. 在左侧「Worker 地址」填入你部署的 Cloudflare Worker URL<br>
-            2. 粘贴订阅链接（支持 Clash YAML / Base64）或手动输入节点 URI<br>
-            3. 解析后点击节点查看详情、复制配置、导出 Clash YAML<br>
-            4. 切换到「浏览器」标签，通过 Worker 中转访问外部网站
-          </div>
-          <div class="notice">
-            <strong>⚠️ 关于浏览器直接访问外网</strong>
-            浏览器无法直接建立 Shadowsocks / VMess TCP 连接。「浏览器」标签的访问方式是：请求先发到你的 Cloudflare Worker，Worker 再请求目标网站并转发响应。这不是传统意义上的代理客户端，而是 HTTPS 级别的内容中转，适合浏览网页。
-          </div>
-          <div class="infobox" style="color:#7fa87a">
-            <strong style="color:#6dd87a">🔧 项目部署</strong>
-            <code>cd worker && npx wrangler deploy</code><br>
-            或直接将 <code>worker/index.js</code> 内容粘贴到 Cloudflare Workers 控制台
+        <div class="sidebar-section" style="padding-bottom:0">
+          <div style="display:flex; justify-content:space-between; align-items:center">
+            <div class="section-label">节点列表</div>
+            <span id="node-count" style="font-family:var(--mono); font-size:11px; color:var(--tm)">0</span>
           </div>
         </div>
-        <div id="node-detail" style="display:none"></div>
+        <div class="node-list" id="node-list">
+          <div style="text-align:center; padding:40px 20px; color:var(--td)">
+            <p>暂无节点，请在上方输入</p>
+          </div>
+        </div>
       </div>
-    </div>
+    </aside>
 
-    <!-- ── MAIN PANEL: browser view ── -->
-    <div class="main-panel" id="view-browser" style="display:none">
+    <!-- MAIN VIEW -->
+    <main class="main-content">
       <div class="browser-bar">
-        <button class="btn-sm ghost" onclick="browserNav(-1)">←</button>
-        <button class="btn-sm ghost" onclick="browserNav(1)">→</button>
-        <input type="text" id="browser-url-input" placeholder="输入网址，例如 https://www.google.com" onkeydown="if(event.key==='Enter')browserGo()">
-        <button class="btn-sm primary" onclick="browserGo()">前往</button>
-        <button class="btn-sm ghost" onclick="browserGo()">↺</button>
+        <button class="btn-icon" onclick="browserBack()">←</button>
+        <div class="url-input-wrap">
+          <input type="text" id="browser-url" class="url-input" placeholder="输入网址，如 https://www.google.com" onkeydown="if(event.key==='Enter')browserGo()">
+        </div>
+        <button class="btn btn-primary" style="width:auto; padding:8px 16px" onclick="browserGo()">前往</button>
       </div>
-      <div id="browser-content" style="flex:1; display:flex; flex-direction:column; overflow:hidden">
-        <div class="browser-placeholder">
-          <div class="ico">🌐</div>
-          <p>在上方输入网址，点击「前往」<br>请求将通过你配置的 Cloudflare Worker 中转<br><br>
-          <span style="color:var(--td); font-size:12px">需要先在左侧配置并连接 Worker 地址</span></p>
+
+      <div class="browser-frame-container" id="browser-container">
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--tm); padding:40px; text-align:center">
+          <div style="font-size:48px; margin-bottom:16px">🌐</div>
+          <h3>无痕 Web 浏览</h3>
+          <p style="max-width:400px; margin-top:12px; font-size:14px; line-height:1.6">
+            内容通过你的 Worker 中转。支持查看富文本、静态页面。<br>
+            <span style="color:var(--ylw)">⚠️ 注意：复杂的 JavaScript 应用（如 YouTube 登录）或严格 CSP 策略的网站可能无法完全正常运行。</span>
+          </p>
         </div>
       </div>
-    </div>
-
+    </main>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════
-//  STATE
-// ═══════════════════════════════════════════════════════════════
-let allNodes = [];
-let selectedId = -1;
 let workerBase = '';
-let workerOk = false;
-let browserHistory = [];
-let browserHistoryIdx = -1;
+let allNodes = [];
+let selectedNodeIdx = -1;
 
 // ═══════════════════════════════════════════════════════════════
-//  UI HELPERS
+//  INIT & THEME
 // ═══════════════════════════════════════════════════════════════
-function toast(msg, dur = 2400) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(el._t);
-  el._t = setTimeout(() => el.classList.remove('show'), dur);
+function toggleTheme() {
+  const current = document.body.getAttribute('data-theme');
+  const next = current === 'light' ? 'dark' : 'light';
+  document.body.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
 }
 
-function esc(s) {
-  return String(s ?? '')
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+// 初始化主题
+if (localStorage.getItem('theme') === 'light') document.body.setAttribute('data-theme', 'light');
 
-function switchView(v) {
-  document.getElementById('view-nodes').style.display   = v==='nodes'   ? 'flex' : 'none';
-  document.getElementById('view-browser').style.display = v==='browser' ? 'flex' : 'none';
-  document.getElementById('tab-nodes').classList.toggle('active', v==='nodes');
-  document.getElementById('tab-browser').classList.toggle('active', v==='browser');
-}
+async function initApp() {
+  const url = document.getElementById('setup-worker-url').value.trim().replace(/\/+$/, '');
+  const msg = document.getElementById('setup-msg');
+  if (!url) { msg.textContent = '请输入有效地址'; return; }
 
-function switchInputTab(t) {
-  document.getElementById('itab-sub').classList.toggle('active', t==='sub');
-  document.getElementById('itab-raw').classList.toggle('active', t==='raw');
-  document.getElementById('ipanel-sub').classList.toggle('active', t==='sub');
-  document.getElementById('ipanel-raw').classList.toggle('active', t==='raw');
-}
+  msg.style.color = 'var(--acc)';
+  msg.textContent = '正在验证 Worker...';
 
-// ═══════════════════════════════════════════════════════════════
-//  WORKER
-// ═══════════════════════════════════════════════════════════════
-async function testWorker() {
-  const val = document.getElementById('worker-url').value.trim().replace(/\/+$/, '');
-  if (!val) { toast('请输入 Worker 地址'); return; }
   try {
-    const r = await fetch(val + '/health', { signal: AbortSignal.timeout(5000) });
+    const r = await fetch(url + '/health', { signal: AbortSignal.timeout(5000) });
     const j = await r.json();
     if (j.ok) {
-      workerBase = val;
-      workerOk = true;
-      document.getElementById('worker-dot').className = 'dot ok';
-      document.getElementById('worker-label').textContent = 'Worker 已连接';
-      toast('✅ Worker 连接成功');
-    } else { throw new Error('not ok'); }
-  } catch {
-    workerOk = false;
-    document.getElementById('worker-dot').className = 'dot err';
-    document.getElementById('worker-label').textContent = 'Worker 连接失败';
-    toast('❌ 无法连接 Worker');
+      workerBase = url;
+      document.getElementById('setup-screen').style.display = 'none';
+      document.getElementById('main-app').classList.add('ready');
+      showToast('✅ Worker 已连接');
+    } else throw 0;
+  } catch (e) {
+    msg.style.color = 'var(--red)';
+    msg.textContent = '连接失败：请确认 Worker 已部署且允许 CORS';
   }
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  SUBSCRIPTION FETCH
+//  NODE PARSER (Fix Garbled Text)
 // ═══════════════════════════════════════════════════════════════
-async function fetchSub() {
-  const urls = document.getElementById('sub-url').value.trim().split('\n')
-    .map(u => u.trim()).filter(Boolean);
-  if (!urls.length) { toast('请输入订阅链接'); return; }
-
-  toast('⏳ 正在拉取...', 8000);
-  const collected = [];
-
-  for (const url of urls) {
-    let text = null;
-
-    // Try via Worker first (avoids CORS)
-    if (workerOk) {
-      try {
-        const r = await fetch(`${workerBase}/api/sub?url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(10000) });
-        if (r.ok) text = await r.text();
-      } catch {}
-    }
-
-    // Fallback: direct (works if sub URL allows CORS)
-    if (!text) {
-      try {
-        const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
-        if (r.ok) text = await r.text();
-      } catch {}
-    }
-
-    // Fallback: public CORS proxies
-    if (!text) {
-      for (const proxy of [
-        `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-        `https://corsproxy.io/?${encodeURIComponent(url)}`,
-      ]) {
-        try {
-          const r = await fetch(proxy, { signal: AbortSignal.timeout(7000) });
-          if (r.ok) { text = await r.text(); break; }
-        } catch {}
-      }
-    }
-
-    if (text) collected.push(...parseSubContent(text));
-    else toast(`⚠️ 无法获取: ${url.slice(0,40)}...`);
-  }
-
-  if (!collected.length) {
-    toast('解析失败 — 请尝试「手动节点」或先配置 Worker');
-  } else {
-    setNodes(collected);
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  PARSERS
-// ═══════════════════════════════════════════════════════════════
-function parseSubContent(text) {
-  text = text.trim();
-  if (text.includes('proxies:')) return parseClash(text);
+function safeDecode(str) {
   try {
-    const dec = atob(text.replace(/[\s\r\n]+/g,''));
-    if (/^(ss|vmess|vless|trojan|hysteria)/m.test(dec)) return parseURIList(dec);
-  } catch {}
-  if (/^(ss|vmess|vless|trojan|hysteria):\/\//m.test(text)) return parseURIList(text);
-  return [];
-}
-
-function parseURIList(text) {
-  return text.split('\n').map(l=>l.trim()).filter(Boolean)
-    .map(parseOneURI).filter(Boolean);
+    // 尝试解码 URI
+    let decoded = decodeURIComponent(str);
+    if (decoded.includes('%')) decoded = decodeURIComponent(decoded); // 双重解码
+    return decoded;
+  } catch (e) {
+    return str;
+  }
 }
 
 function parseOneURI(uri) {
-  if (uri.startsWith('ss://'))         return parseSS(uri);
-  if (uri.startsWith('vmess://'))      return parseVmess(uri);
-  if (uri.startsWith('vless://'))      return parseVless(uri);
-  if (uri.startsWith('trojan://'))     return parseTrojan(uri);
-  if (/^(hysteria2?|hy2):\/\//.test(uri)) return parseHysteria(uri);
-  return null;
-}
-
-function parseSS(uri) {
   try {
-    const noPrefix = uri.slice(5);
-    const hi = noPrefix.lastIndexOf('#');
-    const name = hi >= 0 ? decodeURIComponent(noPrefix.slice(hi+1)) : '未命名';
-    const main = hi >= 0 ? noPrefix.slice(0,hi) : noPrefix;
-    let server='', port='', method='', password='';
-    const ai = main.lastIndexOf('@');
-    if (ai >= 0) {
-      const hp = main.slice(ai+1);
-      const ci = hp.lastIndexOf(':');
-      server = ci>=0 ? hp.slice(0,ci) : hp;
-      port   = ci>=0 ? hp.slice(ci+1) : '';
-      let ui = main.slice(0,ai);
-      try { ui = atob(ui); } catch {}
-      const mi = ui.indexOf(':');
-      method   = mi>=0 ? ui.slice(0,mi) : ui;
-      password = mi>=0 ? ui.slice(mi+1) : '';
-    } else {
-      try {
-        const dec = atob(main);
-        const ai2 = dec.lastIndexOf('@');
-        if (ai2>=0) {
-          const hp = dec.slice(ai2+1);
-          const ci = hp.lastIndexOf(':');
-          server = ci>=0 ? hp.slice(0,ci) : hp;
-          port   = ci>=0 ? hp.slice(ci+1) : '';
-          const ui = dec.slice(0,ai2);
-          const mi = ui.indexOf(':');
-          method = mi>=0 ? ui.slice(0,mi) : ui;
-          password = mi>=0 ? ui.slice(mi+1) : '';
-        }
-      } catch {}
+    uri = uri.trim();
+    if (!uri) return null;
+
+    const hashIdx = uri.indexOf('#');
+    let name = '未命名节点';
+    let baseUri = uri;
+
+    if (hashIdx > 0) {
+      name = safeDecode(uri.slice(hashIdx + 1));
+      baseUri = uri.slice(0, hashIdx);
     }
-    return { name, server, port, proto:'ss', extra:{ 加密: method, 密码:'••••••' }, raw:uri };
-  } catch { return null; }
-}
 
-function parseVmess(uri) {
-  try {
-    const j = JSON.parse(atob(uri.slice(8)));
-    return {
-      name: j.ps || j.remarks || '未命名',
-      server: j.add || '', port: String(j.port||''), proto:'vmess',
-      extra:{ UUID: j.id?j.id.slice(0,8)+'…':'—', 传输: j.net||'tcp', TLS: j.tls||'none', 路径: j.path||'/', 域名: j.host||'—' },
-      raw: uri
-    };
-  } catch { return null; }
-}
+    const proto = baseUri.split('://')[0];
 
-function parseVless(uri) {
-  try {
-    const rest = uri.slice(8);
-    const hi = rest.lastIndexOf('#');
-    const name = hi>=0 ? decodeURIComponent(rest.slice(hi+1)) : '未命名';
-    const main = hi>=0 ? rest.slice(0,hi) : rest;
-    const qi = main.indexOf('?');
-    const ai = main.lastIndexOf('@', qi>=0?qi:undefined);
-    const uuid = ai>=0 ? main.slice(0,ai) : '—';
-    const hp = main.slice(ai>=0?ai+1:0, qi>=0?qi:undefined);
-    const ci = hp.lastIndexOf(':');
-    const server = ci>=0 ? hp.slice(0,ci) : hp;
-    const port   = ci>=0 ? hp.slice(ci+1) : '';
-    const p = qi>=0 ? Object.fromEntries(new URLSearchParams(main.slice(qi+1))) : {};
-    return { name, server, port, proto:'vless',
-      extra:{ UUID: uuid.slice(0,8)+'…', 传输: p.type||'tcp', 安全: p.security||'none', SNI: p.sni||p.serverName||'—', Flow: p.flow||'—' },
-      raw: uri };
-  } catch { return null; }
-}
+    // 处理 SS 协议特殊的 Base64 逻辑
+    if (proto === 'ss') {
+      const content = baseUri.slice(5);
+      if (!content.includes('@')) {
+        // 如果没有 @，说明整个 content 可能是 base64
+        try {
+          const decrypted = atob(content.replace(/-/g, '+').replace(/_/g, '/'));
+          return { proto: 'ss', name, addr: decrypted.split('@')[1] || 'Unknown', raw: uri };
+        } catch(e) {}
+      }
+    }
 
-function parseTrojan(uri) {
-  try {
-    const rest = uri.slice(9);
-    const hi = rest.lastIndexOf('#');
-    const name = hi>=0 ? decodeURIComponent(rest.slice(hi+1)) : '未命名';
-    const main = hi>=0 ? rest.slice(0,hi) : rest;
-    const qi = main.indexOf('?');
-    const ai = main.lastIndexOf('@', qi>=0?qi:undefined);
-    const hp = main.slice(ai>=0?ai+1:0, qi>=0?qi:undefined);
-    const ci = hp.lastIndexOf(':');
-    const server = ci>=0 ? hp.slice(0,ci) : hp;
-    const port   = ci>=0 ? hp.slice(ci+1) : '';
-    const p = qi>=0 ? Object.fromEntries(new URLSearchParams(main.slice(qi+1))) : {};
-    return { name, server, port, proto:'trojan',
-      extra:{ 密码:'••••••', SNI: p.sni||p.peer||server, 传输: p.type||'tcp', 指纹: p.fp||'—' },
-      raw: uri };
-  } catch { return null; }
-}
+    // 提取通用地址
+    const addrPart = baseUri.includes('@') ? baseUri.split('@')[1] : baseUri.split('://')[1];
+    const host = addrPart ? addrPart.split('?')[0] : 'Unknown';
 
-function parseHysteria(uri) {
-  try {
-    const proto = uri.split('://')[0];
-    const rest = uri.slice(proto.length+3);
-    const hi = rest.lastIndexOf('#');
-    const name = hi>=0 ? decodeURIComponent(rest.slice(hi+1)) : '未命名';
-    const main = hi>=0 ? rest.slice(0,hi) : rest;
-    const qi = main.indexOf('?');
-    const ai = main.lastIndexOf('@', qi>=0?qi:undefined);
-    const hp = main.slice(ai>=0?ai+1:0, qi>=0?qi:undefined);
-    const ci = hp.lastIndexOf(':');
-    const server = ci>=0 ? hp.slice(0,ci) : hp;
-    const port   = ci>=0 ? hp.slice(ci+1) : '';
-    const p = qi>=0 ? Object.fromEntries(new URLSearchParams(main.slice(qi+1))) : {};
-    return { name, server, port, proto:'hysteria',
-      extra:{ SNI: p.sni||'—', 混淆: p.obfs||'none', 上行: p.upmbps||'—', 下行: p.downmbps||'—' },
-      raw: uri };
-  } catch { return null; }
-}
-
-function parseClash(text) {
-  const nodes = [];
-  const m = text.match(/^proxies:\s*\n([\s\S]*?)(?=^\S|$)/m);
-  if (!m) return nodes;
-  const blocks = m[1].split(/\n  - /);
-  for (const blk of blocks) {
-    if (!blk.trim()) continue;
-    const get = k => { const r = blk.match(new RegExp(k+':\\s*["\']?([^"\'\\n]+)["\']?')); return r?r[1].trim():''; };
-    const name = get('name') || '未命名';
-    const type = get('type').toLowerCase();
-    const server = get('server');
-    const port = get('port');
-    if (!server) continue;
-    const extra = {};
-    if (type==='ss')            { extra['加密']=get('cipher'); extra['密码']='••••••'; }
-    else if (/vmess|vless/.test(type)) { extra['UUID']=(get('uuid')||'').slice(0,8)+'…'; extra['传输']=get('network')||'tcp'; }
-    else if (type==='trojan')   { extra['密码']='••••••'; extra['SNI']=get('sni')||server; }
-    nodes.push({ name, server, port, proto:type, extra, raw:'(Clash YAML)' });
+    return { proto, name, addr: host, raw: uri };
+  } catch (e) {
+    return null;
   }
-  return nodes;
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  NODE LIST
-// ═══════════════════════════════════════════════════════════════
 function parseRaw() {
-  const text = document.getElementById('raw-input').value.trim();
-  if (!text) { toast('请输入节点 URI'); return; }
-  const nodes = parseURIList(text);
-  if (!nodes.length) { toast('未识别到有效节点'); return; }
-  setNodes(nodes);
-}
+  const input = document.getElementById('raw-input').value;
+  const lines = input.split('\n');
+  const results = [];
+  
+  lines.forEach(line => {
+    const node = parseOneURI(line);
+    if (node) results.push(node);
+  });
 
-function setNodes(nodes) {
-  allNodes = nodes.map((n,i) => ({
-    ...n, id: i,
-    latency: Math.random()>0.25 ? Math.floor(60+Math.random()*350) : null
-  }));
-  renderList(allNodes);
-  showStats(allNodes);
-  toast(`✅ 解析完成，共 ${nodes.length} 个节点`);
-}
-
-function renderList(nodes) {
-  document.getElementById('node-count').textContent = nodes.length;
-  const el = document.getElementById('node-list');
-  if (!nodes.length) {
-    el.innerHTML = '<div class="empty-hint"><div class="ico">🔍</div><p>无匹配节点</p></div>';
+  if (results.length === 0) {
+    showToast('❌ 未能解析任何有效节点');
     return;
   }
-  el.innerHTML = nodes.map(n => {
-    const lat = n.latency === null
-      ? `<span class="lat-badge lat-none">—</span>`
-      : n.latency < 150
-        ? `<span class="lat-badge lat-good">${n.latency}ms</span>`
-        : n.latency < 300
-          ? `<span class="lat-badge lat-mid">${n.latency}ms</span>`
-          : `<span class="lat-badge lat-bad">${n.latency}ms</span>`;
-    return `<div class="node-item${selectedId===n.id?' active':''}" onclick="selectNode(${n.id})">
-      <span class="proto-pill p-${n.proto}">${n.proto}</span>
-      <div class="node-text">
-        <div class="node-name">${esc(n.name)}</div>
-        <div class="node-addr">${esc(n.server)}:${esc(n.port)}</div>
+
+  allNodes = results;
+  renderNodes();
+  showToast(`成功解析 ${results.length} 个节点`);
+}
+
+function renderNodes() {
+  const list = document.getElementById('node-list');
+  const count = document.getElementById('node-count');
+  count.textContent = allNodes.length;
+
+  list.innerHTML = allNodes.map((n, i) => `
+    <div class="node-item ${selectedNodeIdx === i ? 'active' : ''}" onclick="selectNode(${i})">
+      <span class="proto-pill">${n.proto}</span>
+      <div style="flex:1; min-width:0">
+        <div style="font-size:13px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${n.name}</div>
+        <div style="font-size:11px; color:var(--tm); font-family:var(--mono)">${n.addr}</div>
       </div>
-      ${lat}
-    </div>`;
-  }).join('');
-}
-
-function filterNodes(q) {
-  const f = allNodes.filter(n =>
-    n.name.toLowerCase().includes(q.toLowerCase()) ||
-    n.server.toLowerCase().includes(q.toLowerCase())
-  );
-  renderList(f);
-}
-
-function showStats(nodes) {
-  const byP = {};
-  nodes.forEach(n => byP[n.proto]=(byP[n.proto]||0)+1);
-  const low = nodes.filter(n=>n.latency&&n.latency<150).length;
-  document.getElementById('welcome-content').style.display = 'none';
-  document.getElementById('node-detail').style.display = 'block';
-  document.getElementById('panel-title').textContent = '概览';
-  document.getElementById('panel-sub').textContent = `${nodes.length} 个节点`;
-  document.getElementById('node-detail').innerHTML = `
-    <div class="stat-row">
-      <div class="stat"><div class="n">${nodes.length}</div><div class="l">总节点</div></div>
-      <div class="stat"><div class="n" style="color:var(--grn)">${low}</div><div class="l">低延迟</div></div>
-      <div class="stat"><div class="n">${Object.keys(byP).length}</div><div class="l">协议数</div></div>
     </div>
-    <div class="infobox">协议分布：${Object.entries(byP).map(([k,v])=>`<code>${k.toUpperCase()} × ${v}</code>`).join('  ')}</div>
-    <div class="action-row">
-      <button class="act-btn primary" onclick="exportAllClash()">⬇️ 导出全部 Clash 配置</button>
-      <button class="act-btn" onclick="copyAllURIs()">📋 复制全部节点 URI</button>
-    </div>`;
+  `).join('');
 }
 
-function selectNode(id) {
-  selectedId = id;
-  filterNodes(document.getElementById('search').value);
-  const n = allNodes.find(x=>x.id===id);
-  if (!n) return;
-
-  document.getElementById('welcome-content').style.display = 'none';
-  document.getElementById('node-detail').style.display = 'block';
-  document.getElementById('panel-title').textContent = n.name;
-  document.getElementById('panel-sub').textContent = `${n.proto.toUpperCase()} · ${n.server}:${n.port}`;
-
-  const latBadge = n.latency===null
-    ? `<span class="lat-badge lat-none" style="font-size:13px">未测试</span>`
-    : n.latency<150
-      ? `<span class="lat-badge lat-good" style="font-size:13px">${n.latency} ms</span>`
-      : n.latency<300
-        ? `<span class="lat-badge lat-mid" style="font-size:13px">${n.latency} ms</span>`
-        : `<span class="lat-badge lat-bad" style="font-size:13px">${n.latency} ms</span>`;
-
-  const extras = Object.entries(n.extra||{}).map(([k,v])=>`
-    <div class="card"><div class="lbl">${esc(k)}</div><div class="val">${esc(v)}</div></div>`).join('');
-
-  document.getElementById('node-detail').innerHTML = `
-    <div class="cards-grid">
-      <div class="card"><div class="lbl">协议</div><div class="val"><span class="proto-pill p-${n.proto}" style="font-size:11px">${n.proto.toUpperCase()}</span></div></div>
-      <div class="card"><div class="lbl">延迟</div><div class="val">${latBadge}</div></div>
-      <div class="card"><div class="lbl">服务器</div><div class="val">${esc(n.server)}</div></div>
-      <div class="card"><div class="lbl">端口</div><div class="val">${esc(n.port)}</div></div>
-      ${extras}
-    </div>
-    <div class="action-row">
-      <button class="act-btn primary" onclick="copyURI(${id})">📋 复制节点 URI</button>
-      <button class="act-btn" onclick="exportSingleClash(${id})">⬇️ 导出 Clash 配置</button>
-      <button class="act-btn green" onclick="openInBrowser(${id})">🌐 在浏览器中测试</button>
-      <button class="act-btn" onclick="fakeTest(${id})">⚡ 测试延迟</button>
-    </div>
-    <div class="raw-box"><div class="lbl">原始 URI</div><div class="content">${esc(n.raw)}</div></div>
-  `;
-}
-
-function copyURI(id) {
-  const n = allNodes.find(x=>x.id===id);
-  if (n) navigator.clipboard.writeText(n.raw).then(()=>toast('✅ 已复制节点 URI'));
-}
-
-function copyAllURIs() {
-  const uris = allNodes.map(n=>n.raw).join('\n');
-  navigator.clipboard.writeText(uris).then(()=>toast(`✅ 已复制 ${allNodes.length} 个节点`));
-}
-
-function clashProxy(n) {
-  if (n.proto==='ss') return `  - name: "${n.name}"\n    type: ss\n    server: ${n.server}\n    port: ${n.port}\n    cipher: ${n.extra['加密']||'chacha20-ietf-poly1305'}\n    password: "replace-password"`;
-  if (n.proto==='vmess') return `  - name: "${n.name}"\n    type: vmess\n    server: ${n.server}\n    port: ${n.port}\n    uuid: "replace-uuid"\n    alterId: 0\n    cipher: auto\n    network: ${n.extra['传输']||'tcp'}`;
-  if (n.proto==='trojan') return `  - name: "${n.name}"\n    type: trojan\n    server: ${n.server}\n    port: ${n.port}\n    password: "replace-password"\n    sni: ${n.extra['SNI']||n.server}`;
-  return `  - name: "${n.name}"\n    type: ${n.proto}\n    server: ${n.server}\n    port: ${n.port}`;
-}
-
-function exportSingleClash(id) {
-  const n = allNodes.find(x=>x.id===id);
-  if (!n) return;
-  const yaml = `# SubLink export\nmixed-port: 7890\nallow-lan: false\nmode: rule\n\nproxies:\n${clashProxy(n)}\n\nproxy-groups:\n  - name: Proxy\n    type: select\n    proxies:\n      - "${n.name}"\n\nrules:\n  - GEOIP,CN,DIRECT\n  - MATCH,Proxy\n`;
-  dlText(yaml, `clash-${n.name.replace(/[^\w\-]/g,'-')}.yaml`);
-  toast('✅ 已下载 Clash 配置');
-}
-
-function exportAllClash() {
-  if (!allNodes.length) return;
-  const proxies = allNodes.map(n=>clashProxy(n)).join('\n');
-  const names = allNodes.map(n=>`      - "${n.name}"`).join('\n');
-  const yaml = `# SubLink export — ${allNodes.length} nodes\nmixed-port: 7890\nallow-lan: false\nmode: rule\n\nproxies:\n${proxies}\n\nproxy-groups:\n  - name: Proxy\n    type: select\n    proxies:\n${names}\n\nrules:\n  - GEOIP,CN,DIRECT\n  - MATCH,Proxy\n`;
-  dlText(yaml, 'clash-all.yaml');
-  toast(`✅ 已导出 ${allNodes.length} 个节点`);
-}
-
-function dlText(text, filename) {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([text],{type:'text/plain'}));
-  a.download = filename; a.click();
-}
-
-function fakeTest(id) {
-  const n = allNodes.find(x=>x.id===id);
-  if (!n) return;
-  toast('⚡ 测试中...');
-  setTimeout(()=>{
-    n.latency = Math.floor(60+Math.random()*320);
-    selectNode(id);
-    filterNodes(document.getElementById('search').value);
-    toast(`延迟：${n.latency}ms`);
-  }, 900);
+function selectNode(i) {
+  selectedNodeIdx = i;
+  renderNodes();
+  showToast(`已选择: ${allNodes[i].name}`);
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  BROWSER (Worker relay)
+//  BROWSER LOGIC
 // ═══════════════════════════════════════════════════════════════
-function openInBrowser(id) {
-  const n = allNodes.find(x=>x.id===id);
-  if (!n) return;
-  // Use server address as a test target
-  const testUrl = `https://${n.server}`;
-  document.getElementById('browser-url-input').value = testUrl;
-  switchView('browser');
-  browserGo();
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('collapsed');
 }
 
 async function browserGo() {
-  const rawUrl = document.getElementById('browser-url-input').value.trim();
-  if (!rawUrl) return;
-  let url = rawUrl;
+  let url = document.getElementById('browser-url').value.trim();
+  if (!url) return;
   if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
 
-  if (!workerOk) {
-    showBrowserMsg('⚠️ 请先在左侧配置并连接 Worker 地址', '通过 Worker 中转才能访问外部网站');
-    return;
-  }
-
-  showBrowserMsg('⏳ 加载中...', url);
+  const container = document.getElementById('browser-container');
+  container.innerHTML = `<div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--acc)">
+    <div class="spinner">⏳ 正在通过 Worker 加载内容...</div>
+  </div>`;
 
   try {
     const relayUrl = `${workerBase}/api/fetch?url=${encodeURIComponent(url)}`;
-    const res = await fetch(relayUrl, { signal: AbortSignal.timeout(15000) });
+    const res = await fetch(relayUrl);
     let html = await res.text();
-    const ct = res.headers.get('content-type') || '';
 
-    if (ct.includes('text/html')) {
-      // Rewrite relative links to go through relay, inject base tag
-      html = html.replace(/<head>/i, `<head><base href="${url}">`);
-      showBrowserHTML(html, url);
-    } else if (ct.includes('json')) {
-      showBrowserMsg('JSON 响应', `<pre style="font-size:12px;white-space:pre-wrap;word-break:break-word">${esc(html)}</pre>`);
-    } else {
-      showBrowserMsg('✅ 已加载', `状态：${res.status}，类型：${ct}<br>内容长度：${html.length} 字节<br><br>此内容类型无法预览，可直接下载。`);
+    // 基础重写逻辑：尝试注入 <base> 标签以处理相对路径
+    if (html.includes('<head>')) {
+      html = html.replace('<head>', `<head><base href="${url}">`);
+    } else if (html.includes('<html>')) {
+      html = html.replace('<html>', `<html><head><base href="${url}"></head>`);
     }
 
-    // Add to history
-    browserHistory = browserHistory.slice(0, browserHistoryIdx+1);
-    browserHistory.push(url);
-    browserHistoryIdx = browserHistory.length - 1;
-
-  } catch(e) {
-    showBrowserMsg('❌ 加载失败', e.message || '请检查 Worker 连接和目标地址');
+    const iframe = document.createElement('iframe');
+    container.innerHTML = '';
+    container.appendChild(iframe);
+    
+    // 使用 srcdoc 注入内容
+    iframe.srcdoc = html;
+    showToast('🚀 页面已加载');
+  } catch (e) {
+    container.innerHTML = `<div style="color:var(--red); padding:40px; text-align:center">
+      <h3>加载失败</h3>
+      <p>${e.message}</p>
+    </div>`;
   }
 }
 
-function showBrowserHTML(html, url) {
-  const cont = document.getElementById('browser-content');
-  cont.innerHTML = '';
-  const iframe = document.createElement('iframe');
-  iframe.className = 'browser-frame';
-  iframe.style.cssText = 'flex:1;border:none;width:100%;height:100%;background:#fff';
-  cont.appendChild(iframe);
-  iframe.srcdoc = html;
-}
-
-function showBrowserMsg(title, body='') {
-  document.getElementById('browser-content').innerHTML = `
-    <div class="browser-placeholder">
-      <div style="font-size:15px;font-weight:600;color:var(--tx)">${title}</div>
-      <p>${body}</p>
-    </div>`;
-}
-
-function browserNav(dir) {
-  const idx = browserHistoryIdx + dir;
-  if (idx < 0 || idx >= browserHistory.length) return;
-  browserHistoryIdx = idx;
-  document.getElementById('browser-url-input').value = browserHistory[idx];
-  browserGo();
-}
-
 // ═══════════════════════════════════════════════════════════════
-//  DEMO
+//  UTILS
 // ═══════════════════════════════════════════════════════════════
-function loadDemo() {
-  const uris = [
-    'ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTpkZW1vcGFzc3dvcmQ=@jp1.example.com:8388#🇯🇵 Tokyo-01',
-    'vmess://eyJ2IjoiMiIsInBzIjoi8J+HuPCfh6wgU2luZ2Fwb3JlLTAxIiwiYWRkIjoic2cxLmV4YW1wbGUuY29tIiwicG9ydCI6IjQ0MyIsInR5cGUiOiJub25lIiwiaWQiOiIxMjM0NTY3OC0xMjM0LTEyMzQtMTIzNC0xMjM0NTY3ODkwYWIiLCJhaWQiOiIwIiwibmV0Ijoid3MiLCJwYXRoIjoiL3dzIiwiaG9zdCI6InNnMS5leGFtcGxlLmNvbSIsInRscyI6InRscyJ9',
-    'vless://12345678-1234-1234-1234-1234567890ab@us1.example.com:443?encryption=none&security=tls&sni=us1.example.com&type=ws&path=%2Fvless#🇺🇸 US-West-01',
-    'trojan://demopassword@hk1.example.com:443?sni=hk1.example.com&type=tcp&fp=chrome#🇭🇰 HongKong-01',
-    'vless://abcdef12-3456-7890-abcd-ef1234567890@tw1.example.com:443?security=reality&sni=www.microsoft.com&type=tcp&fp=safari#🇹🇼 Taiwan-01',
-    'ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTpzZWNyZXQ=@kr1.example.com:8080#🇰🇷 Seoul-01',
-    'trojan://pass2@de1.example.com:443?sni=de1.example.com#🇩🇪 Germany-01',
-    'vless://deadbeef-dead-beef-dead-beefdeadbeef@fr1.example.com:443?security=tls&type=ws&path=%2Fapi&sni=fr1.example.com#🇫🇷 Paris-01',
-  ];
-  document.getElementById('raw-input').value = uris.join('\n');
-  switchInputTab('raw');
-  setTimeout(parseRaw, 80);
+function showToast(m) {
+  const t = document.getElementById('toast');
+  t.textContent = m;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
 }
 </script>
 </body>
