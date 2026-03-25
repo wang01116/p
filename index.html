@@ -3,213 +3,126 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SubLink Pro - 免客户端 Web 代理</title>
+<title>SubLink Pro - 免客户端 Web 浏览器</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 :root {
-  /* Dark Mode (Default) */
-  --bg:       #07090e;
-  --s1:       #0e1117;
-  --s2:       #141820;
-  --s3:       #1c2130;
-  --b1:       rgba(255,255,255,0.06);
-  --b2:       rgba(255,255,255,0.11);
-  --tx:       #dde2ee;
-  --tm:       #606880;
-  --td:       #3a4255;
-  --acc:      #3d7eff;
-  --acc-rgb:  61, 126, 255;
-  --grn:      #00d68f;
-  --red:      #ff4d6a;
-  --ylw:      #ffbe0b;
-  --mono:     'IBM Plex Mono', monospace;
-  --sans:     'Space Grotesk', system-ui, sans-serif;
+  --bg: #07090e; --s1: #0e1117; --s2: #141820; --s3: #1c2130;
+  --b1: rgba(255,255,255,0.06); --b2: rgba(255,255,255,0.11);
+  --tx: #dde2ee; --tm: #606880; --td: #3a4255; --acc: #3d7eff;
+  --acc-rgb: 61, 126, 255; --grn: #00d68f; --red: #ff4d6a; --ylw: #ffbe0b;
+  --mono: 'IBM Plex Mono', monospace; --sans: 'Space Grotesk', system-ui, sans-serif;
 }
 
 [data-theme="light"] {
-  --bg:       #f4f7fa;
-  --s1:       #ffffff;
-  --s2:       #edf2f7;
-  --s3:       #e2e8f0;
-  --b1:       rgba(0,0,0,0.06);
-  --b2:       rgba(0,0,0,0.1);
-  --tx:       #1a202c;
-  --tm:       #4a5568;
-  --td:       #a0aec0;
-  --acc:      #2563eb;
+  --bg: #f4f7fa; --s1: #ffffff; --s2: #edf2f7; --s3: #e2e8f0;
+  --b1: rgba(0,0,0,0.06); --b2: rgba(0,0,0,0.1);
+  --tx: #1a202c; --tm: #4a5568; --td: #a0aec0; --acc: #2563eb;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--tx); font-family: var(--sans); transition: background 0.3s; }
+body { height: 100vh; overflow: hidden; background: var(--bg); color: var(--tx); font-family: var(--sans); transition: background 0.3s; }
 
-/* ═══ LOGIN SCREEN ═══ */
-#setup-screen {
-  position: fixed; inset: 0; z-index: 999;
-  background: var(--bg); display: flex; align-items: center; justify-content: center;
-}
-.setup-card {
-  width: 100%; max-width: 400px; padding: 32px;
-  background: var(--s1); border-radius: 20px; border: 1px solid var(--b1);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.3); text-align: center;
-}
-.setup-logo { font-size: 40px; margin-bottom: 16px; }
+/* LOGIN SCREEN */
+#setup-screen { position: fixed; inset: 0; z-index: 1000; background: var(--bg); display: flex; align-items: center; justify-content: center; }
+.setup-card { width: 90%; max-width: 400px; padding: 32px; background: var(--s1); border-radius: 24px; border: 1px solid var(--b1); text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.4); }
 
-/* ═══ MAIN APP LAYOUT ═══ */
-.app { display: none; grid-template-rows: 52px 1fr; height: 100vh; }
+/* MAIN APP */
+.app { display: none; grid-template-rows: 56px 1fr; height: 100vh; }
 .app.ready { display: grid; }
+.topbar { display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--b1); background: var(--s1); gap: 12px; }
+.logo { display: flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer; }
+.logo-icon { width: 28px; height: 28px; border-radius: 8px; background: var(--acc); color: #fff; display: grid; place-items: center; }
 
-.topbar {
-  display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--b1);
-  background: var(--s1); z-index: 10;
-}
-.topbar-logo { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 15px; cursor: pointer; }
-.logo-icon { width: 28px; height: 28px; border-radius: 7px; background: var(--acc); display: grid; place-items: center; color: #fff; }
+.body { display: flex; overflow: hidden; position: relative; }
 
-.body { display: flex; overflow: hidden; }
+/* SIDEBAR */
+.sidebar { width: 320px; background: var(--s1); border-right: 1px solid var(--b1); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); flex-shrink: 0; display: flex; flex-direction: column; overflow: hidden; }
+.sidebar.collapsed { width: 0; border: none; }
+.sidebar-inner { width: 320px; height: 100%; display: flex; flex-direction: column; padding: 20px; }
 
-/* ═══ SIDEBAR ═══ */
-.sidebar {
-  width: 320px; border-right: 1px solid var(--b1);
-  display: flex; flex-direction: column; background: var(--s1);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s;
-}
-.sidebar.collapsed { width: 0; transform: translateX(-320px); border-right: none; }
+/* BROWSER AREA */
+.main-content { flex: 1; display: flex; flex-direction: column; background: #fff; overflow: hidden; }
+.browser-bar { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--s1); border-bottom: 1px solid var(--b1); }
+.url-input { flex: 1; background: var(--s2); border: 1px solid var(--b1); border-radius: 10px; padding: 10px 14px; color: var(--tx); font-family: var(--mono); font-size: 14px; outline: none; }
+.url-input:focus { border-color: var(--acc); }
 
-.sidebar-content { width: 320px; display: flex; flex-direction: column; height: 100%; }
-.sidebar-section { padding: 16px; }
-.section-label { font-size: 10px; color: var(--tm); letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 10px; font-weight: 600; }
+.iframe-container { flex: 1; position: relative; }
+iframe { width: 100%; height: 100%; border: none; background: #fff; }
 
-textarea.sub-url {
-  width: 100%; background: var(--s2); border: 1px solid var(--b1);
-  border-radius: 12px; color: var(--tx); font-family: var(--mono);
-  font-size: 11px; padding: 12px; resize: none; outline: none; transition: border 0.2s;
-}
-textarea.sub-url:focus { border-color: var(--acc); }
-
-.node-list { flex: 1; overflow-y: auto; padding: 8px; }
-.node-item {
-  display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 10px;
-  cursor: pointer; margin-bottom: 4px; border: 1px solid transparent; transition: all 0.2s;
-}
-.node-item:hover { background: var(--s2); }
-.node-item.active { background: rgba(var(--acc-rgb), 0.1); border-color: var(--acc); }
-
-/* ═══ BROWSER VIEW ═══ */
-.main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-.browser-bar {
-  display: flex; align-items: center; gap: 8px; padding: 8px 16px;
-  background: var(--s1); border-bottom: 1px solid var(--b1);
-}
-.url-input-wrap { flex: 1; position: relative; }
-.url-input {
-  width: 100%; background: var(--s2); border: 1px solid var(--b1);
-  border-radius: 8px; color: var(--tx); font-family: var(--mono);
-  font-size: 13px; padding: 8px 12px; outline: none;
-}
-.browser-frame-container { flex: 1; background: #fff; overflow: hidden; }
-iframe { width: 100%; height: 100%; border: none; }
-
-/* ═══ UI COMPONENTS ═══ */
-.btn {
-  padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 600;
-  border: none; cursor: pointer; transition: 0.2s; font-family: var(--sans);
-}
+/* COMMON UI */
+.btn { padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer; font-weight: 600; font-family: var(--sans); transition: 0.2s; }
 .btn-primary { background: var(--acc); color: #fff; width: 100%; }
-.btn-primary:hover { opacity: 0.9; }
-.btn-icon { background: none; color: var(--tm); font-size: 18px; padding: 6px; display: flex; align-items: center; justify-content: center; border-radius: 6px; }
+.btn-icon { background: none; color: var(--tm); font-size: 20px; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 8px; }
 .btn-icon:hover { background: var(--s3); color: var(--tx); }
 
-.proto-pill {
-  font-size: 9px; font-family: var(--mono); font-weight: 700;
-  padding: 2px 6px; border-radius: 4px; text-transform: uppercase;
-  background: var(--s3); color: var(--tm);
-}
+textarea { width: 100%; background: var(--s2); border: 1px solid var(--b1); border-radius: 12px; padding: 12px; color: var(--tx); font-family: var(--mono); font-size: 11px; resize: none; outline: none; }
+.node-list { flex: 1; overflow-y: auto; margin-top: 20px; }
+.node-item { padding: 12px; border-radius: 12px; cursor: pointer; margin-bottom: 6px; border: 1px solid transparent; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
+.node-item:hover { background: var(--s2); }
+.node-item.active { background: rgba(var(--acc-rgb), 0.1); border-color: var(--acc); }
+.proto-tag { font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: var(--s3); color: var(--tm); text-transform: uppercase; }
 
-.toast {
-  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
-  background: #1c2130; color: #fff; padding: 10px 20px; border-radius: 10px;
-  font-size: 13px; opacity: 0; transition: 0.3s; z-index: 1000;
-}
+.toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: #1c2130; color: #fff; padding: 12px 24px; border-radius: 12px; transition: 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28); opacity: 0; z-index: 2000; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* ═══ RESPONSIVE ═══ */
-@media (max-width: 768px) {
-  .sidebar { position: absolute; height: calc(100% - 52px); z-index: 5; }
-}
+@media (max-width: 768px) { .sidebar { position: absolute; z-index: 100; height: 100%; } }
 </style>
 </head>
 <body>
 
-<!-- 1. SETUP SCREEN (LOGIN) -->
+<!-- 登录/配置墙 -->
 <div id="setup-screen">
   <div class="setup-card">
-    <div class="setup-logo">⚡</div>
-    <h2 style="margin-bottom:8px">配置 Worker 连接</h2>
-    <p style="font-size:13px; color:var(--tm); margin-bottom:24px">请输入你的 Cloudflare Worker 部署地址以开始</p>
-    <input type="text" id="setup-worker-url" class="url-input" placeholder="https://your-worker.name.workers.dev" style="margin-bottom:16px; text-align:center">
-    <button class="btn btn-primary" onclick="initApp()">连接并进入</button>
-    <p id="setup-msg" style="margin-top:16px; font-size:12px; color:var(--red)"></p>
+    <div style="font-size: 48px; margin-bottom: 16px;">⚡</div>
+    <h2 style="margin-bottom: 8px;">连接 SubLink Pro</h2>
+    <p style="color: var(--tm); font-size: 14px; margin-bottom: 24px;">请输入部署好的 Cloudflare Worker 地址</p>
+    <input type="text" id="setup-worker-url" class="url-input" placeholder="https://xxx.workers.dev" style="margin-bottom: 16px; text-align: center; width: 100%;">
+    <button class="btn btn-primary" onclick="initApp()">连接验证</button>
+    <div id="setup-status" style="margin-top: 16px; font-size: 12px;"></div>
   </div>
 </div>
 
-<!-- 2. MAIN APP -->
+<!-- 主程序 -->
 <div class="app" id="main-app">
-  <div class="topbar">
-    <button class="btn-icon" style="margin-right:12px" onclick="toggleSidebar()">☰</button>
-    <div class="topbar-logo" onclick="location.reload()">
+  <header class="topbar">
+    <button class="btn-icon" onclick="toggleSidebar()">☰</button>
+    <div class="logo" onclick="location.reload()">
       <div class="logo-icon">⚡</div>
       <span>SubLink Pro</span>
     </div>
-    <div style="margin-left:auto; display:flex; gap:8px">
-      <button class="btn-icon" onclick="toggleTheme()" title="切换主题">🌓</button>
-      <div id="worker-status-dot" style="width:8px; height:8px; border-radius:50%; background:var(--grn); align-self:center; margin-left:10px"></div>
+    <div style="margin-left: auto; display: flex; gap: 10px;">
+      <button class="btn-icon" onclick="toggleTheme()">🌓</button>
+      <div id="status-dot" style="width: 10px; height: 10px; border-radius: 50%; background: #666; align-self: center;"></div>
     </div>
-  </div>
+  </header>
 
   <div class="body">
-    <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
-      <div class="sidebar-content">
-        <div class="sidebar-section">
-          <div class="section-label">添加节点 URI</div>
-          <textarea class="sub-url" id="raw-input" rows="5" placeholder="ss://...&#10;vmess://...&#10;vless://..."></textarea>
-          <button class="btn btn-primary" style="margin-top:8px" onclick="parseRaw()">解析节点</button>
-        </div>
+      <div class="sidebar-inner">
+        <h4 style="font-size: 11px; color: var(--tm); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">手动输入节点 URI</h4>
+        <textarea id="node-input" rows="6" placeholder="ss://...&#10;vmess://...&#10;vless://..."></textarea>
+        <button class="btn btn-primary" style="margin-top: 10px;" onclick="parseNodes()">解析节点</button>
         
-        <div class="divider" style="height:1px; background:var(--b1)"></div>
-
-        <div class="sidebar-section" style="padding-bottom:0">
-          <div style="display:flex; justify-content:space-between; align-items:center">
-            <div class="section-label">节点列表</div>
-            <span id="node-count" style="font-family:var(--mono); font-size:11px; color:var(--tm)">0</span>
-          </div>
-        </div>
         <div class="node-list" id="node-list">
-          <div style="text-align:center; padding:40px 20px; color:var(--td)">
-            <p>暂无节点，请在上方输入</p>
-          </div>
+           <div style="text-align: center; color: var(--td); margin-top: 40px; font-size: 13px;">暂无节点数据</div>
         </div>
       </div>
     </aside>
 
-    <!-- MAIN VIEW -->
     <main class="main-content">
       <div class="browser-bar">
         <button class="btn-icon" onclick="browserBack()">←</button>
-        <div class="url-input-wrap">
-          <input type="text" id="browser-url" class="url-input" placeholder="输入网址，如 https://www.google.com" onkeydown="if(event.key==='Enter')browserGo()">
-        </div>
-        <button class="btn btn-primary" style="width:auto; padding:8px 16px" onclick="browserGo()">前往</button>
+        <input type="text" id="browser-input" class="url-input" placeholder="输入网址或搜索关键词..." onkeydown="if(event.key==='Enter')browserGo()">
+        <button class="btn btn-primary" style="width: auto; padding: 0 20px;" onclick="browserGo()">前往</button>
       </div>
-
-      <div class="browser-frame-container" id="browser-container">
-        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--tm); padding:40px; text-align:center">
-          <div style="font-size:48px; margin-bottom:16px">🌐</div>
-          <h3>无痕 Web 浏览</h3>
-          <p style="max-width:400px; margin-top:12px; font-size:14px; line-height:1.6">
-            内容通过你的 Worker 中转。支持查看富文本、静态页面。<br>
-            <span style="color:var(--ylw)">⚠️ 注意：复杂的 JavaScript 应用（如 YouTube 登录）或严格 CSP 策略的网站可能无法完全正常运行。</span>
+      <div class="iframe-container" id="iframe-wrap">
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--tm); background: var(--bg); text-align: center; padding: 20px;">
+          <div style="font-size: 64px; margin-bottom: 20px;">🌐</div>
+          <h3>自由浏览已开启</h3>
+          <p style="margin-top: 10px; max-width: 400px; font-size: 14px; opacity: 0.7;">
+            在上方输入网址或关键词，流量将通过 Worker 节点中转。<br>支持网页跳转、图片显示及文本查阅。
           </p>
         </div>
       </div>
@@ -220,187 +133,136 @@ iframe { width: 100%; height: 100%; border: none; }
 <div class="toast" id="toast"></div>
 
 <script>
-let workerBase = '';
-let allNodes = [];
-let selectedNodeIdx = -1;
+let workerUrl = '';
+let nodes = [];
 
-// ═══════════════════════════════════════════════════════════════
-//  INIT & THEME
-// ═══════════════════════════════════════════════════════════════
-function toggleTheme() {
-  const current = document.body.getAttribute('data-theme');
-  const next = current === 'light' ? 'dark' : 'light';
-  document.body.setAttribute('data-theme', next);
-  localStorage.setItem('theme', next);
-}
-
-// 初始化主题
-if (localStorage.getItem('theme') === 'light') document.body.setAttribute('data-theme', 'light');
-
+// 1. 初始化与登录
 async function initApp() {
-  const url = document.getElementById('setup-worker-url').value.trim().replace(/\/+$/, '');
-  const msg = document.getElementById('setup-msg');
-  if (!url) { msg.textContent = '请输入有效地址'; return; }
+  const input = document.getElementById('setup-worker-url').value.trim().replace(/\/+$/, '');
+  const status = document.getElementById('setup-status');
+  if(!input) return;
 
-  msg.style.color = 'var(--acc)';
-  msg.textContent = '正在验证 Worker...';
+  status.style.color = 'var(--acc)';
+  status.textContent = '正在连接 Worker...';
 
   try {
-    const r = await fetch(url + '/health', { signal: AbortSignal.timeout(5000) });
-    const j = await r.json();
-    if (j.ok) {
-      workerBase = url;
+    const res = await fetch(input + '/health', { signal: AbortSignal.timeout(5000) });
+    const data = await res.json();
+    if(data.ok) {
+      workerUrl = input;
       document.getElementById('setup-screen').style.display = 'none';
       document.getElementById('main-app').classList.add('ready');
-      showToast('✅ Worker 已连接');
-    } else throw 0;
+      document.getElementById('status-dot').style.background = 'var(--grn)';
+      showToast('✅ Worker 连接成功');
+    }
   } catch (e) {
-    msg.style.color = 'var(--red)';
-    msg.textContent = '连接失败：请确认 Worker 已部署且允许 CORS';
+    status.style.color = 'var(--red)';
+    status.textContent = '连接失败，请检查 URL 或 Worker CORS 设置';
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  NODE PARSER (Fix Garbled Text)
-// ═══════════════════════════════════════════════════════════════
+// 2. 节点解析与乱码修复
 function safeDecode(str) {
   try {
-    // 尝试解码 URI
-    let decoded = decodeURIComponent(str);
-    if (decoded.includes('%')) decoded = decodeURIComponent(decoded); // 双重解码
-    return decoded;
-  } catch (e) {
-    return str;
+    let t = decodeURIComponent(str);
+    if(t.includes('%')) t = decodeURIComponent(t);
+    return t;
+  } catch(e) { 
+    try { return atob(str.replace(/-/g, '+').replace(/_/g, '/')); } catch(e2) { return str; }
   }
 }
 
-function parseOneURI(uri) {
-  try {
-    uri = uri.trim();
-    if (!uri) return null;
-
-    const hashIdx = uri.indexOf('#');
-    let name = '未命名节点';
-    let baseUri = uri;
-
-    if (hashIdx > 0) {
-      name = safeDecode(uri.slice(hashIdx + 1));
-      baseUri = uri.slice(0, hashIdx);
-    }
-
-    const proto = baseUri.split('://')[0];
-
-    // 处理 SS 协议特殊的 Base64 逻辑
-    if (proto === 'ss') {
-      const content = baseUri.slice(5);
-      if (!content.includes('@')) {
-        // 如果没有 @，说明整个 content 可能是 base64
-        try {
-          const decrypted = atob(content.replace(/-/g, '+').replace(/_/g, '/'));
-          return { proto: 'ss', name, addr: decrypted.split('@')[1] || 'Unknown', raw: uri };
-        } catch(e) {}
-      }
-    }
-
-    // 提取通用地址
-    const addrPart = baseUri.includes('@') ? baseUri.split('@')[1] : baseUri.split('://')[1];
-    const host = addrPart ? addrPart.split('?')[0] : 'Unknown';
-
-    return { proto, name, addr: host, raw: uri };
-  } catch (e) {
-    return null;
-  }
-}
-
-function parseRaw() {
-  const input = document.getElementById('raw-input').value;
+function parseNodes() {
+  const input = document.getElementById('node-input').value;
   const lines = input.split('\n');
-  const results = [];
-  
+  const tempNodes = [];
+
   lines.forEach(line => {
-    const node = parseOneURI(line);
-    if (node) results.push(node);
+    line = line.trim();
+    if(!line) return;
+    
+    try {
+      let name = '未命名节点';
+      let proto = line.split('://')[0];
+      let part = line;
+
+      // 提取名称（修复乱码关键）
+      if(line.includes('#')) {
+        const slices = line.split('#');
+        name = safeDecode(slices[1]);
+        part = slices[0];
+      }
+
+      // 提取地址
+      const addrPart = part.includes('@') ? part.split('@')[1] : part.split('://')[1];
+      const host = addrPart ? addrPart.split(':')[0].split('?')[0] : 'Unknown';
+
+      tempNodes.push({ proto, name, host, raw: line });
+    } catch(e) {}
   });
 
-  if (results.length === 0) {
-    showToast('❌ 未能解析任何有效节点');
-    return;
-  }
-
-  allNodes = results;
+  nodes = tempNodes;
   renderNodes();
-  showToast(`成功解析 ${results.length} 个节点`);
+  showToast(`成功解析 ${nodes.length} 个节点`);
 }
 
 function renderNodes() {
   const list = document.getElementById('node-list');
-  const count = document.getElementById('node-count');
-  count.textContent = allNodes.length;
-
-  list.innerHTML = allNodes.map((n, i) => `
-    <div class="node-item ${selectedNodeIdx === i ? 'active' : ''}" onclick="selectNode(${i})">
-      <span class="proto-pill">${n.proto}</span>
+  list.innerHTML = nodes.map((n, i) => `
+    <div class="node-item" onclick="selectNode(${i})">
+      <span class="proto-tag">${n.proto}</span>
       <div style="flex:1; min-width:0">
-        <div style="font-size:13px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${n.name}</div>
-        <div style="font-size:11px; color:var(--tm); font-family:var(--mono)">${n.addr}</div>
+        <div style="font-weight:600; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${n.name}</div>
+        <div style="font-family:var(--mono); font-size:10px; color:var(--tm);">${n.host}</div>
       </div>
     </div>
   `).join('');
 }
 
 function selectNode(i) {
-  selectedNodeIdx = i;
-  renderNodes();
-  showToast(`已选择: ${allNodes[i].name}`);
+  showToast(`已切换至: ${nodes[i].name}`);
+  document.querySelectorAll('.node-item').forEach((el, idx) => {
+    el.classList.toggle('active', idx === i);
+  });
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  BROWSER LOGIC
-// ═══════════════════════════════════════════════════════════════
+// 3. 增强浏览器逻辑
+function browserGo() {
+  let val = document.getElementById('browser-input').value.trim();
+  if(!val) return;
+
+  let targetUrl = val;
+  // 判断是否是搜索关键词
+  if(!val.includes('.') || val.includes(' ')) {
+    targetUrl = `https://www.google.com/search?q=${encodeURIComponent(val)}`;
+  } else {
+    if(!/^https?:\/\//i.test(val)) targetUrl = 'https://' + val;
+  }
+
+  document.getElementById('browser-input').value = targetUrl;
+  const wrap = document.getElementById('iframe-wrap');
+  
+  // 建立中转
+  const proxied = `${workerUrl}/proxy?url=${encodeURIComponent(targetUrl)}`;
+  wrap.innerHTML = `<iframe src="${proxied}" id="browser-frame"></iframe>`;
+  showToast('🚀 页面跳转中...');
+}
+
+function browserBack() {
+  const f = document.getElementById('browser-frame');
+  if(f) f.contentWindow.history.back();
+}
+
+// 4. UI 交互
 function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('collapsed');
 }
 
-async function browserGo() {
-  let url = document.getElementById('browser-url').value.trim();
-  if (!url) return;
-  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
-
-  const container = document.getElementById('browser-container');
-  container.innerHTML = `<div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--acc)">
-    <div class="spinner">⏳ 正在通过 Worker 加载内容...</div>
-  </div>`;
-
-  try {
-    const relayUrl = `${workerBase}/api/fetch?url=${encodeURIComponent(url)}`;
-    const res = await fetch(relayUrl);
-    let html = await res.text();
-
-    // 基础重写逻辑：尝试注入 <base> 标签以处理相对路径
-    if (html.includes('<head>')) {
-      html = html.replace('<head>', `<head><base href="${url}">`);
-    } else if (html.includes('<html>')) {
-      html = html.replace('<html>', `<html><head><base href="${url}"></head>`);
-    }
-
-    const iframe = document.createElement('iframe');
-    container.innerHTML = '';
-    container.appendChild(iframe);
-    
-    // 使用 srcdoc 注入内容
-    iframe.srcdoc = html;
-    showToast('🚀 页面已加载');
-  } catch (e) {
-    container.innerHTML = `<div style="color:var(--red); padding:40px; text-align:center">
-      <h3>加载失败</h3>
-      <p>${e.message}</p>
-    </div>`;
-  }
+function toggleTheme() {
+  const t = document.body.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  document.body.setAttribute('data-theme', t);
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  UTILS
-// ═══════════════════════════════════════════════════════════════
 function showToast(m) {
   const t = document.getElementById('toast');
   t.textContent = m;
