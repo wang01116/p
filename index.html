@@ -1,103 +1,113 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SubLink Pro Max</title>
+<title>SubLink Material</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto+Mono&display=swap');
 
 :root {
-  --bg: #0a0c10; --s1: #11141a; --s2: #1a1f29; --b1: rgba(255,255,255,0.08);
-  --tx: #e6edf3; --tm: #7d8590; --acc: #2f81f7; --grn: #3fb950; --red: #f85149;
-  --sans: 'Space Grotesk', system-ui, sans-serif; --mono: 'IBM Plex Mono', monospace;
-}
-[data-theme="light"] {
-  --bg: #f6f8fa; --s1: #ffffff; --s2: #eff2f5; --b1: rgba(0,0,0,0.08);
-  --tx: #1f2328; --tm: #656d76; --acc: #0969da;
+  --primary: #D0BCFF; --on-primary: #381E72; --primary-container: #4F378B;
+  --surface: #1C1B1F; --on-surface: #E6E1E5; --surface-variant: #49454F;
+  --outline: #938F99; --bg: #141218; --error: #F2B8B5;
+  --m3-card: #2B2930; --m3-chip: #332D41;
 }
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { height: 100vh; overflow: hidden; background: var(--bg); color: var(--tx); font-family: var(--sans); }
+[data-theme="light"] {
+  --primary: #6750A4; --on-primary: #FFFFFF; --primary-container: #EADDFF;
+  --surface: #FEF7FF; --on-surface: #1D1B20; --surface-variant: #E7E0EC;
+  --outline: #79747E; --bg: #FFFBFE; --m3-card: #F3EDF7; --m3-chip: #E8DEF8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+body { font-family: 'Google Sans', sans-serif; background: var(--bg); color: var(--on-surface); height: 100vh; overflow: hidden; transition: 0.3s; }
 
 /* LAYOUT */
-#setup-screen { position: fixed; inset: 0; z-index: 1000; background: var(--bg); display: flex; align-items: center; justify-content: center; }
-.app { display: none; grid-template-rows: 60px 1fr; height: 100vh; }
-.app.ready { display: grid; }
+.setup-screen { position: fixed; inset: 0; z-index: 100; background: var(--bg); display: flex; align-items: center; justify-content: center; }
+.setup-card { background: var(--m3-card); padding: 40px; border-radius: 28px; width: 90%; max-width: 420px; text-align: center; }
 
-.topbar { display: flex; align-items: center; padding: 0 20px; background: var(--s1); border-bottom: 1px solid var(--b1); gap: 15px; }
-.body { display: flex; overflow: hidden; }
+.app-container { display: none; grid-template-rows: 64px 1fr; height: 100vh; }
+.app-container.ready { display: grid; }
 
-/* SIDEBAR */
-.sidebar { width: 340px; background: var(--s1); border-right: 1px solid var(--b1); display: flex; flex-direction: column; transition: 0.3s; }
-.sidebar.collapsed { width: 0; transform: translateX(-340px); }
-.sidebar-inner { width: 340px; height: 100%; display: flex; flex-direction: column; padding: 20px; }
+.navbar { display: flex; align-items: center; padding: 0 24px; gap: 16px; background: var(--bg); border-bottom: 1px solid var(--outline); }
+.nav-title { font-size: 22px; font-weight: 500; flex: 1; }
 
-/* BROWSER AREA */
-.main-content { flex: 1; display: flex; flex-direction: column; background: #fff; position: relative; }
-.browser-bar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--s1); border-bottom: 1px solid var(--b1); }
-.quick-sites { display: flex; gap: 8px; padding: 8px 16px; background: var(--s2); border-bottom: 1px solid var(--b1); overflow-x: auto; }
-.site-tag { padding: 4px 10px; border-radius: 6px; background: var(--s1); border: 1px solid var(--b1); font-size: 12px; cursor: pointer; white-space: nowrap; }
-.site-tag:hover { border-color: var(--acc); color: var(--acc); }
+/* BODY */
+.main-body { display: flex; overflow: hidden; }
+.sidebar { width: 360px; background: var(--bg); border-right: 1px solid var(--outline); display: flex; flex-direction: column; transition: 0.4s cubic-bezier(0.05, 0.7, 0.1, 1); }
+.sidebar.hide { width: 0; transform: translateX(-360px); }
 
-/* UI COMPONENTS */
-.input { width: 100%; background: var(--s2); border: 1px solid var(--b1); border-radius: 8px; padding: 10px; color: var(--tx); font-family: var(--mono); outline: none; }
-.btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: 0.2s; background: var(--acc); color: #fff; }
-.node-item { padding: 12px; border-radius: 12px; border: 1px solid var(--b1); margin-bottom: 8px; cursor: pointer; position: relative; }
-.node-item:hover { background: var(--s2); }
-.node-item.active { border-color: var(--acc); background: rgba(47, 129, 247, 0.1); }
-.ms-tag { position: absolute; right: 12px; top: 12px; font-size: 10px; font-family: var(--mono); color: var(--tm); }
+.content { flex: 1; display: flex; flex-direction: column; background: #fff; }
 
-iframe { width: 100%; height: 100%; border: none; background: #fff; }
-.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 8px 20px; border-radius: 20px; opacity: 0; transition: 0.3s; z-index: 2000; }
+/* MATERIAL COMPONENTS */
+.m3-input { width: 100%; background: var(--surface-variant); border: none; border-bottom: 2px solid var(--outline); padding: 12px 16px; border-radius: 4px 4px 0 0; color: var(--on-surface); font-family: 'Roboto Mono', monospace; font-size: 14px; margin-bottom: 12px; }
+.m3-input:focus { border-bottom-color: var(--primary); }
 
+.m3-btn { background: var(--primary); color: var(--on-primary); padding: 12px 24px; border-radius: 100px; border: none; font-weight: 500; cursor: pointer; transition: 0.2s; }
+.m3-btn:hover { box-shadow: 0 1px 3px rgba(0,0,0,0.3); opacity: 0.9; }
+
+.node-card { background: var(--m3-card); padding: 16px; border-radius: 16px; margin-bottom: 8px; cursor: pointer; border: 1px solid transparent; position: relative; }
+.node-card:hover { background: var(--surface-variant); }
+.node-card.active { border-color: var(--primary); background: var(--primary-container); }
+.node-name { font-weight: 500; font-size: 15px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.node-info { font-size: 11px; color: var(--outline); font-family: 'Roboto Mono'; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.node-ms { position: absolute; right: 16px; top: 16px; font-size: 10px; color: var(--primary); font-weight: 700; }
+
+.browser-bar { display: flex; padding: 12px 16px; background: var(--bg); gap: 12px; align-items: center; border-bottom: 1px solid var(--outline); }
+.chip-bar { display: flex; gap: 8px; padding: 8px 16px; background: var(--bg); overflow-x: auto; border-bottom: 1px solid var(--outline); }
+.chip { background: var(--m3-chip); padding: 6px 16px; border-radius: 8px; font-size: 12px; cursor: pointer; white-space: nowrap; border: 1px solid var(--outline); }
+
+iframe { flex: 1; border: none; background: #fff; }
+
+.toast { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%); background: #313033; color: #F4EFF4; padding: 12px 24px; border-radius: 4px; font-size: 14px; opacity: 0; transition: 0.3s; z-index: 1000; }
 </style>
 </head>
 <body>
 
-<div id="setup-screen">
-  <div style="text-align:center; width: 320px;">
-    <h1 style="margin-bottom:20px">SubLink Pro Max</h1>
-    <input type="text" id="setup-url" class="input" placeholder="Worker URL (https://...)" style="margin-bottom:15px; text-align:center">
-    <button class="btn" style="width:100%" onclick="initApp()">连接并启动</button>
+<div class="setup-screen" id="setup-screen">
+  <div class="setup-card">
+    <h1 style="margin-bottom: 12px;">SubLink Pro</h1>
+    <p style="margin-bottom: 24px; color: var(--outline);">Material You Edition</p>
+    <input type="text" id="worker-url" class="m3-input" placeholder="https://your-worker.dev" style="text-align: center;">
+    <button class="m3-btn" style="width: 100%;" onclick="connect()">进入控制台</button>
   </div>
 </div>
 
-<div class="app" id="main-app">
-  <header class="topbar">
-    <button onclick="document.getElementById('sidebar').classList.toggle('collapsed')" style="background:none; border:none; color:var(--tx); cursor:pointer; font-size:20px">☰</button>
-    <b style="font-size:18px">SubLink</b>
-    <div style="margin-left:auto; display:flex; gap:10px">
-      <button class="btn" onclick="speedTestAll()" style="background:var(--s2); color:var(--tx)">测速</button>
-      <button class="btn" onclick="document.body.setAttribute('data-theme', document.body.getAttribute('data-theme')==='light'?'dark':'light')">🌓</button>
-    </div>
-  </header>
+<div class="app-container" id="app-container">
+  <nav class="navbar">
+    <button onclick="toggleSidebar()" style="background:none; border:none; color:var(--on-surface); font-size:24px; cursor:pointer;">☰</button>
+    <div class="nav-title">SubLink</div>
+    <button class="m3-btn" style="padding: 8px 16px;" onclick="testAll()">一键测速</button>
+    <button onclick="toggleTheme()" style="background:none; border:none; color:var(--on-surface); font-size:20px; cursor:pointer;">🌓</button>
+  </nav>
 
-  <div class="body">
+  <div class="main-body">
     <aside class="sidebar" id="sidebar">
-      <div class="sidebar-inner">
-        <textarea id="raw-nodes" class="input" rows="5" placeholder="粘贴节点 URI..."></textarea>
-        <button class="btn" style="margin-top:10px; width:100%" onclick="parseNodes()">解析节点</button>
-        <div class="node-list" id="node-list" style="flex:1; overflow-y:auto; margin-top:15px"></div>
+      <div style="padding: 20px; flex: 1; display: flex; flex-direction: column;">
+        <textarea id="node-raw" class="m3-input" rows="4" placeholder="粘贴节点 URI..."></textarea>
+        <button class="m3-btn" onclick="parse()">解析节点</button>
+        <div id="node-list" style="margin-top: 20px; overflow-y: auto; flex: 1; padding-right: 4px;"></div>
       </div>
     </aside>
 
-    <main class="main-content">
+    <main class="content">
       <div class="browser-bar">
-        <input type="text" id="b-url" class="input" placeholder="输入网址或关键词搜索..." onkeydown="if(event.key==='Enter')go()">
-        <button class="btn" onclick="go()">前往</button>
+        <input type="text" id="url-input" class="m3-input" placeholder="输入网址或搜索关键词..." style="margin-bottom:0;" onkeydown="if(event.key==='Enter')go()">
+        <button class="m3-btn" onclick="go()">前往</button>
       </div>
-      <div class="quick-sites">
-        <div class="site-tag" onclick="quickGo('google')">Google</div>
-        <div class="site-tag" onclick="quickGo('youtube')">YouTube</div>
-        <div class="site-tag" onclick="quickGo('nitter')">Nitter (Twitter X)</div>
-        <div class="site-tag" onclick="quickGo('yt-music')">YouTube Music</div>
-        <div class="site-tag" onclick="quickGo('bing')">Bing</div>
+      <div class="chip-bar">
+        <div class="chip" onclick="quick('https://www.google.com')">Google</div>
+        <div class="chip" onclick="quick('https://www.youtube.com')">YouTube</div>
+        <div class="chip" onclick="quick('https://nitter.net')">Nitter (X)</div>
+        <div class="chip" onclick="quick('https://www.perplexity.ai')">Perplexity</div>
+        <div class="chip" onclick="quick('https://po18.tw')">PO18</div>
+        <div class="chip" onclick="quick('https://github.com')">GitHub</div>
       </div>
-      <div id="view" style="flex:1">
-        <div style="height:100%; display:flex; align-items:center; justify-content:center; color:var(--tm); flex-direction:column">
-           <span style="font-size:50px">📡</span>
-           <p>请选择节点并输入网址</p>
+      <div id="viewport" style="flex:1; display:flex; flex-direction:column;">
+        <div style="margin:auto; text-align:center; color:var(--outline);">
+          <p style="font-size: 48px;">🚀</p>
+          <p>解析节点并输入网址开始浏览</p>
         </div>
       </div>
     </main>
@@ -107,128 +117,111 @@ iframe { width: 100%; height: 100%; border: none; background: #fff; }
 <div class="toast" id="toast"></div>
 
 <script>
-let workerBase = '';
+let worker = '';
 let nodeList = [];
 
-async function initApp() {
-  const url = document.getElementById('setup-url').value.trim().replace(/\/+$/, '');
-  if (!url) return;
-  try {
-    const res = await fetch(url + '/health');
-    if (res.ok) {
-      workerBase = url;
+function connect() {
+  const val = document.getElementById('worker-url').value.trim().replace(/\/+$/, '');
+  if(!val) return;
+  fetch(val + '/health').then(res => res.json()).then(data => {
+    if(data.ok) {
+      worker = val;
       document.getElementById('setup-screen').style.display = 'none';
-      document.getElementById('main-app').classList.add('ready');
+      document.getElementById('app-container').classList.add('ready');
     }
-  } catch (e) { alert("无法连接到 Worker，请检查地址和 CORS 设置"); }
+  }).catch(() => alert("Worker 无法连接！"));
 }
 
-// 节点解析核心 (修复乱码)
-function decodeNodeName(str) {
-  try {
-    let decoded = decodeURIComponent(str);
-    if (decoded.includes('%')) decoded = decodeURIComponent(decoded);
-    return decoded;
-  } catch (e) {
+function getFlag(name) {
+  const m = { "美国": "🇺🇸", "香港": "🇭🇰", "台湾": "🇹🇼", "日本": "🇯🇵", "韩国": "🇰🇷", "新加坡": "🇸🇬", "英国": "🇬🇧", "德国": "🇩🇪", "中国": "🇨🇳", "US": "🇺🇸", "HK": "🇭🇰", "TW": "🇹🇼", "JP": "🇯🇵", "SG": "🇸🇬" };
+  for (let k in m) if (name.toUpperCase().includes(k)) return m[k];
+  return "🌐";
+}
+
+function decodeStr(str) {
+  try { return decodeURIComponent(str); } catch {
     try { return atob(str.replace(/-/g, '+').replace(/_/g, '/')); } catch { return str; }
   }
 }
 
-function parseNodes() {
-  const raw = document.getElementById('raw-nodes').value;
+function parse() {
+  const raw = document.getElementById('node-raw').value;
   const lines = raw.split('\n');
   nodeList = [];
-
-  lines.forEach(line => {
-    line = line.trim();
-    if (!line || !line.includes('://')) return;
-
-    let name = "未命名节点";
-    let proto = line.split('://')[0];
+  lines.forEach(l => {
+    l = l.trim();
+    if(!l.includes('://')) return;
+    let name = "未知节点", proto = l.split('://')[0], server = "0.0.0.0", port = "0";
     
-    // 逻辑：优先处理 # 后缀
-    if (line.includes('#')) {
-      const parts = line.split('#');
-      name = decodeNodeName(parts[parts.length - 1]);
-    } else if (proto === 'vmess') {
-      try {
-        const json = JSON.parse(atob(line.split('://')[1]));
-        name = json.ps || json.remarks || name;
-      } catch(e) {}
+    if(l.includes('#')) {
+      name = decodeStr(l.split('#').pop());
     }
     
-    const addr = line.split('@')[1] ? line.split('@')[1].split(':')[0] : "Address";
-    nodeList.push({ name, proto, raw: line, addr: addr.split('?')[0], latency: null });
-  });
+    // 基础地址解析
+    const parts = l.split('://')[1].split('@');
+    const addr = parts.length > 1 ? parts[1] : parts[0];
+    const hostPort = addr.split('?')[0].split(':');
+    server = hostPort[0];
+    port = hostPort[1] || "443";
 
-  renderNodes();
+    nodeList.push({ name, proto: proto.toUpperCase(), server, port, raw: l, ms: null });
+  });
+  render();
 }
 
-function renderNodes() {
-  const div = document.getElementById('node-list');
-  div.innerHTML = nodeList.map((n, i) => `
-    <div class="node-item" onclick="selectNode(${i})">
-      <div style="font-size:13px; font-weight:700; color:var(--tx)">${n.name}</div>
-      <div style="font-size:11px; color:var(--tm); font-family:var(--mono)">${n.proto.toUpperCase()} | ${n.addr}</div>
-      <span class="ms-tag" id="ms-${i}">${n.latency ? n.latency+'ms' : ''}</span>
+function render() {
+  const container = document.getElementById('node-list');
+  container.innerHTML = nodeList.map((n, i) => `
+    <div class="node-card" onclick="selectNode(${i})">
+      <div class="node-name">${getFlag(n.name)} ${n.name}</div>
+      <div class="node-info">${n.proto} | ${n.port} | ${n.server}</div>
+      <div class="node-ms" id="ms-${i}">${n.ms ? n.ms + 'ms' : ''}</div>
     </div>
   `).join('');
 }
 
 function selectNode(i) {
-  document.querySelectorAll('.node-item').forEach((el, idx) => el.classList.toggle('active', idx === i));
-  showToast("已选择节点: " + nodeList[i].name);
+  document.querySelectorAll('.node-card').forEach((c, idx) => c.classList.toggle('active', i === idx));
+  showToast("切换至: " + nodeList[i].name);
 }
 
-// 测速功能 (基于 Worker 中转延迟)
-async function speedTestAll() {
-  showToast("正在测速...");
-  for (let i = 0; i < nodeList.length; i++) {
+async function testAll() {
+  showToast("开始测速...");
+  for(let i=0; i<nodeList.length; i++) {
     const start = Date.now();
     try {
-      // 通过 Worker 尝试请求谷歌的一个小资源来测试节点链路
-      await fetch(`${workerBase}/?url=${encodeURIComponent('https://www.google.com/favicon.ico')}`, { mode: 'no-cors' });
-      const ms = Date.now() - start;
-      nodeList[i].latency = ms;
-      document.getElementById(`ms-${i}`).textContent = ms + 'ms';
-      document.getElementById(`ms-${i}`).style.color = ms < 500 ? 'var(--grn)' : 'var(--ylw)';
-    } catch(e) {
+      await fetch(`${worker}/?url=${encodeURIComponent('https://www.google.com/favicon.ico')}`, { mode: 'no-cors' });
+      nodeList[i].ms = Date.now() - start;
+      document.getElementById(`ms-${i}`).textContent = nodeList[i].ms + 'ms';
+    } catch {
       document.getElementById(`ms-${i}`).textContent = '超时';
     }
   }
 }
 
 function go() {
-  let val = document.getElementById('b-url').value.trim();
-  if (!val) return;
-
+  let val = document.getElementById('url-input').value.trim();
+  if(!val) return;
   let url = val;
-  if (!val.includes('.') || val.includes(' ')) {
-    url = `https://www.google.com/search?q=${encodeURIComponent(val)}`;
-  } else if (!/^https?:\/\//i.test(val)) {
-    url = 'https://' + val;
-  }
-
-  document.getElementById('b-url').value = url;
-  const view = document.getElementById('view');
-  view.innerHTML = `<iframe src="${workerBase}/?url=${encodeURIComponent(url)}"></iframe>`;
+  if(!val.includes('.') || val.includes(' ')) url = "https://www.google.com/search?q=" + encodeURIComponent(val);
+  else if(!val.startsWith('http')) url = "https://" + val;
+  
+  document.getElementById('url-input').value = url;
+  document.getElementById('viewport').innerHTML = `<iframe src="${worker}/?url=${encodeURIComponent(url)}"></iframe>`;
 }
 
-function quickGo(site) {
-  const sites = {
-    'google': 'https://www.google.com',
-    'youtube': 'https://www.youtube.com',
-    'nitter': 'https://nitter.net',
-    'yt-music': 'https://music.youtube.com',
-    'bing': 'https://www.bing.com'
-  };
-  document.getElementById('b-url').value = sites[site];
+function quick(u) {
+  document.getElementById('url-input').value = u;
   go();
 }
 
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('hide'); }
+function toggleTheme() {
+  const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', theme);
+}
 function showToast(m) {
-  const t = document.getElementById('toast');
-  t.textContent = m; t.style.opacity = 1;
+  const t = document.getElementById('toast'); t.textContent = m; t.style.opacity = 1;
   setTimeout(() => t.style.opacity = 0, 3000);
 }
 </script>
