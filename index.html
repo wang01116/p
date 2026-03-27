@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>SubLink Final Pro</title>
+<title>SubLink Final Stable</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=JetBrains+Mono&display=swap');
 
@@ -19,79 +19,54 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Google Sans', sans-serif; background: var(--bg); color: var(--txt); height: 100vh; width: 100vw; overflow: hidden; display: flex; flex-direction: column; }
 
-/* 核心布局结构 */
+/* 核心网格布局 */
 .shell { display: grid; grid-template-rows: 64px 1fr; height: 100vh; width: 100vw; overflow: hidden; }
 
-/* 头部 */
-.header { grid-row: 1; display: flex; align-items: center; padding: 0 16px; background: var(--bg); border-bottom: 1px solid var(--outline); z-index: 1000; height: 64px; gap: 12px; }
-.search-box { flex: 1; display: flex; align-items: center; background: var(--surf); border: 1px solid var(--outline); border-radius: 28px; padding: 0 16px; height: 44px; }
-.search-input { flex: 1; background: transparent; border: none; color: var(--txt); font-size: 15px; outline: none; margin-left: 10px; }
+/* 头部响应式 */
+.header { grid-row: 1; display: flex; align-items: center; padding: 0 12px; background: var(--bg); border-bottom: 1px solid var(--outline); z-index: 1000; height: 64px; gap: 8px; }
+.search-box { flex: 1; min-width: 0; display: flex; align-items: center; background: var(--surf); border: 1px solid var(--outline); border-radius: 28px; padding: 0 12px; height: 44px; }
+.search-input { flex: 1; background: transparent; border: none; color: var(--txt); font-size: 14px; outline: none; margin-left: 8px; min-width: 0; }
 
-/* 主体 */
+/* 测速按钮响应式 */
+.m3-btn { background: var(--prim); color: var(--on-prim); border-radius: 20px; border: none; font-weight: 600; padding: 8px 16px; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; flex-shrink: 0; }
+@media (max-width: 600px) {
+  .m3-btn span { display: none; }
+  .m3-btn::before { content: "⚡"; font-size: 16px; }
+  .m3-btn { padding: 8px 12px; }
+}
+
+/* 主体内容 */
 .main { grid-row: 2; display: flex; height: 100%; overflow: hidden; position: relative; }
 
-/* 侧边栏 */
+/* 侧边栏：移动端严格锁定左侧 */
 .sidebar {
-  width: 320px; background: var(--bg); border-right: 1px solid var(--outline);
-  display: flex; flex-direction: column; transition: width 0.3s;
-  overflow: hidden; flex-shrink: 0; position: relative;
+  width: 300px; background: var(--bg); border-right: 1px solid var(--outline);
+  display: flex; flex-direction: column; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s;
+  overflow: hidden; flex-shrink: 0; position: relative; z-index: 1100;
 }
 .sidebar.collapsed { width: 0; border: none; }
-.resizer { position: absolute; right: 0; top: 0; width: 4px; height: 100%; cursor: col-resize; z-index: 10; }
 
 @media (max-width: 768px) {
-  .sidebar { position: absolute; left: -320px; z-index: 1100; height: 100%; transition: transform 0.3s; }
-  .sidebar.open { left: 0; width: 280px; box-shadow: 10px 0 40px rgba(0,0,0,0.5); transform: translateX(320px); }
+  .sidebar { position: absolute; left: 0; top: 0; bottom: 0; transform: translateX(-100%); width: 280px; }
+  .sidebar.open { transform: translateX(0); box-shadow: 10px 0 40px rgba(0,0,0,0.5); }
+  .scrim { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1050; }
+  .scrim.open { display: block; }
 }
 
-.node-list { flex: 1; overflow-y: auto; padding: 16px; }
-.node-card { background: var(--surf); border: 1px solid var(--outline); padding: 16px; border-radius: 16px; margin-bottom: 10px; cursor: pointer; position: relative; }
+/* 节点展示与选中标记 */
+.node-list { flex: 1; overflow-y: auto; padding: 12px; }
+.node-card { background: var(--surf); border: 1px solid var(--outline); padding: 14px; border-radius: 16px; margin-bottom: 8px; cursor: pointer; border: 1px solid var(--outline); position: relative; }
 .node-card.active { border: 2px solid var(--prim) !important; background: rgba(208, 188, 255, 0.1); }
-.node-ms { position: absolute; right: 12px; bottom: 12px; font-family: 'JetBrains Mono'; font-size: 10px; color: var(--prim); font-weight: bold; }
+.node-card.active::after { content: "✓ 已选择"; position: absolute; right: 12px; top: 12px; font-size: 9px; font-weight: 700; color: var(--prim); background: var(--bg); padding: 2px 6px; border-radius: 4px; }
 
-/* --- 核心修复：防止内容被遮挡 --- */
-.viewport-shell { 
-    flex: 1; 
-    display: flex; 
-    flex-direction: column; 
-    background: #fff; 
-    min-width: 0; 
-    height: 100%; 
-    overflow: hidden; 
-}
-
-.chip-bar { 
-    height: 48px;
-    display: flex; 
-    gap: 8px; 
-    padding: 8px 16px; 
-    background: var(--bg); 
-    overflow-x: auto; 
-    scrollbar-width: none; 
-    border-bottom: 1px solid var(--outline); 
-    flex-shrink: 0; 
-}
+/* 浏览器核心布局 */
+.viewport-shell { flex: 1; display: flex; flex-direction: column; background: #fff; min-width: 0; height: 100%; overflow: hidden; }
+.chip-bar { height: 48px; display: flex; gap: 8px; padding: 8px 16px; background: var(--bg); overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--outline); flex-shrink: 0; }
 .chip-bar::-webkit-scrollbar { display: none; }
-.chip { padding: 4px 14px; border-radius: 8px; background: var(--surf); border: 1px solid var(--outline); font-size: 12px; white-space: nowrap; cursor: pointer; color: var(--txt); display: flex; align-items: center; }
+.chip { padding: 4px 14px; border-radius: 8px; background: var(--surf); border: 1px solid var(--outline); font-size: 11px; white-space: nowrap; cursor: pointer; color: var(--txt); display: flex; align-items: center; }
 
-#view-container { 
-    flex: 1; 
-    display: flex; 
-    flex-direction: column; 
-    height: 100%; 
-    overflow: hidden; 
-    background: #fff; 
-}
-iframe { 
-    flex: 1;
-    width: 100%; 
-    height: 100% !important; 
-    border: none; 
-    background: #fff; 
-    display: block; 
-}
-
-.m3-btn { background: var(--prim); color: var(--on-prim); border-radius: 20px; border: none; font-weight: 600; padding: 10px 20px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+#view-container { flex: 1; display: flex; flex-direction: column; height: 100%; overflow: hidden; background: #fff; }
+iframe { width: 100%; height: 100%; border: none; background: #fff; display: block; }
 
 #setup { position: fixed; inset: 0; z-index: 2000; background: var(--bg); display: flex; align-items: center; justify-content: center; }
 </style>
@@ -99,29 +74,29 @@ iframe {
 <body>
 
 <div id="setup">
-  <div style="background:var(--surf); padding:40px; border-radius:28px; width:90%; max-width:400px; text-align:center; border:1px solid var(--outline)">
-    <h2 style="margin-bottom:24px">SubLink Studio v16</h2>
-    <input type="text" id="w-url" class="search-input" placeholder="输入 Worker 地址" style="background:var(--bg); border:1px solid var(--outline); width:100%; padding:14px; border-radius:14px; margin-bottom:16px; text-align:center; color:#fff">
-    <button class="m3-btn" style="width:100%; justify-content:center" onclick="connect()">建立连接</button>
+  <div style="background:var(--surf); padding:32px; border-radius:28px; width:90%; max-width:360px; text-align:center; border:1px solid var(--outline)">
+    <h2 style="margin-bottom:12px; font-size: 20px;">SubLink Studio</h2>
+    <input type="text" id="w-url" class="search-input" placeholder="输入 Worker 地址" style="background:var(--bg); border:1px solid var(--outline); width:100%; padding:14px; border-radius:12px; margin-bottom:16px; text-align:center; color:#fff">
+    <button class="m3-btn" style="width:100%; justify-content:center" onclick="connect()">立即开启</button>
   </div>
 </div>
 
 <div class="shell" id="app" style="display:none">
+  <div class="scrim" id="scrim" onclick="toggleSide()"></div>
   <header class="header">
-    <button onclick="toggleSide()" style="background:none; border:none; color:var(--txt); font-size:24px; cursor:pointer">☰</button>
+    <button onclick="toggleSide()" style="background:none; border:none; color:var(--txt); font-size:24px; cursor:pointer; padding: 4px;">☰</button>
     <div class="search-box">
       <span>🔎</span>
-      <input type="text" id="b-input" class="search-input" placeholder="输入待搜索内容并回车..." onkeydown="if(event.key==='Enter')go()">
+      <input type="text" id="b-input" class="search-input" placeholder="输入内容回车搜索..." onkeydown="if(event.key==='Enter')go()">
     </div>
-    <button class="m3-btn" onclick="testAll()">⚡<span>测速</span></button>
-    <button onclick="toggleTheme()" style="background:none; border:none; color:var(--txt); font-size:20px; cursor:pointer">🌓</button>
+    <button class="m3-btn" onclick="testAll()">⚡<span>一键测速</span></button>
+    <button onclick="toggleTheme()" style="background:none; border:none; color:var(--txt); font-size:20px; cursor:pointer; padding: 4px;">🌓</button>
   </header>
 
   <div class="main">
     <aside class="sidebar" id="sidebar">
-      <div class="resizer" id="resizer"></div>
-      <div class="sidebar-inner" style="width: 100%; height: 100%; display: flex; flex-direction: column; padding: 16px;">
-        <textarea id="raw" style="width:100%; height:100px; background:var(--surf); border:1px solid var(--outline); border-radius:12px; color:#fff; padding:12px; font-size:12px; resize:none; font-family:'JetBrains Mono'" placeholder="粘贴节点链接..."></textarea>
+      <div style="width: 100%; height: 100%; display: flex; flex-direction: column; padding: 12px;">
+        <textarea id="raw" style="width:100%; height:100px; background:var(--surf); border:1px solid var(--outline); border-radius:12px; color:#fff; padding:12px; font-size:12px; resize:none; font-family:'JetBrains Mono'" placeholder="粘贴节点或订阅链接..."></textarea>
         <button class="m3-btn" style="width:100%; margin-top:12px; justify-content:center" onclick="handleInput()">深度解析</button>
         <div class="node-list" id="node-list"></div>
       </div>
@@ -129,14 +104,17 @@ iframe {
 
     <main class="viewport-shell">
       <div class="chip-bar">
+        <div class="chip" onclick="quick('https://duckduckgo.com/html/')">🦆 DuckDuckGo</div>
+        <div class="chip" onclick="quick('https://www.youtube.com')">📺 YouTube</div>
         <div class="chip" onclick="quick('https://github.com')">🐙 GitHub</div>
+        <div class="chip" onclick="quick('https://missav.com')">🔞 MissAV</div>
         <div class="chip" onclick="quick('https://www.po18.tw')">🔞 PO18</div>
         <div class="chip" onclick="quick('https://www.69shuba.com')">📚 69书吧</div>
         <div class="chip" onclick="quick('https://telegram.org')">✈️ Telegram</div>
       </div>
       <div id="view-container">
-          <div id="view" style="flex:1; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--sub-txt); background: var(--bg)">
-            选择节点开始浏览
+          <div id="view" style="flex:1; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--sub-txt); background: var(--bg); text-align: center; padding: 20px;">
+            请先选择节点开始浏览
           </div>
       </div>
     </main>
@@ -199,8 +177,8 @@ function render() {
   const list = document.getElementById('node-list');
   list.innerHTML = nodes.map((n, i) => `
     <div class="node-card" id="n-${i}" onclick="selectNode(${i})">
-      <div class="node-name">${n.name}</div>
-      <div class="node-ms" id="ms-${i}">${n.latency ? n.latency + 'ms' : n.proto.toUpperCase()}</div>
+      <div style="font-weight: 500; font-size: 13px;">${n.name}</div>
+      <div id="ms-${i}" style="font-family:'JetBrains Mono'; font-size:10px; color:var(--prim); margin-top:4px;">${n.latency ? n.latency+'ms' : n.proto.toUpperCase()}</div>
     </div>
   `).join('');
 }
@@ -224,7 +202,6 @@ async function testAll() {
   await Promise.all(nodes.map((_, i) => ping(i)));
 }
 
-// 【核心修复】强制使用 HTML 无脚本接口，100% 成功加载 DDG 结果
 function go() {
   let val = document.getElementById('b-input').value.trim();
   if(!val) return;
@@ -241,26 +218,19 @@ function quick(u) { document.getElementById('b-input').value = u; go(); }
 
 function toggleSide() {
   const sb = document.getElementById('sidebar');
-  if(window.innerWidth > 768) sb.classList.toggle('collapsed');
-  else sb.classList.toggle('open');
+  const sc = document.getElementById('scrim');
+  if(window.innerWidth > 768) {
+    sb.classList.toggle('collapsed');
+  } else {
+    sb.classList.toggle('open');
+    sc.classList.toggle('open');
+  }
 }
 
 function toggleTheme() {
   const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', t);
 }
-
-// 侧边栏物理拉伸
-const sb = document.getElementById('sidebar');
-const r = document.getElementById('resizer');
-let isResizing = false;
-r.addEventListener('mousedown', () => isResizing = true);
-document.addEventListener('mousemove', e => {
-  if(!isResizing) return;
-  let w = e.clientX;
-  if(w > 200 && w < 600) sb.style.width = w + 'px';
-});
-document.addEventListener('mouseup', () => isResizing = false);
 </script>
 </body>
 </html>
